@@ -26,8 +26,8 @@ repositories {
 	maven {
 		url = uri("https://maven.pkg.github.com/9oogle/common-library")
 		credentials {
-			username = providers.gradleProperty("GitHubPackagesUsername").get()
-			password = providers.gradleProperty("GitHubPackagesPassword").get()
+			username = findProperty("gpr.user") ?: System.getenv("ORG_GRADLE_PROJECT_GitHubPackagesUsername")
+			password = findProperty("gpr.key") ?: System.getenv("ORG_GRADLE_PROJECT_GitHubPackagesPassword")
 		}
 	}
 }
