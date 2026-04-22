@@ -34,8 +34,8 @@ public class LectureRepositoryImpl implements LectureRepository {
 	}
 
 	@Override
-	public List<Lecture> findAllByInstructorInstructorId(UUID instructorId) {
-		return lectureJpaRepository.findAllByInstructorInstructorId(instructorId);
+	public List<Lecture> findAllByInstructorId(UUID instructorId) {
+		return lectureJpaRepository.findAllByInstructorId(instructorId);
 	}
 
 	@Override

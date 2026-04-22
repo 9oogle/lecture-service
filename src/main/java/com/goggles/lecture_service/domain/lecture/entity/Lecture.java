@@ -1,8 +1,13 @@
 package com.goggles.lecture_service.domain.lecture.entity;
 
 import com.goggles.common.domain.BaseAudit;
+import com.goggles.common.exception.BadRequestException;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
 import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
+import com.goggles.lecture_service.domain.lecture.exception.ChapterNotFoundException;
+import com.goggles.lecture_service.domain.lecture.exception.DuplicateSortOrderException;
+import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureStatusException;
+import com.goggles.lecture_service.domain.lecture.exception.LectureErrorCode;
 import com.goggles.lecture_service.domain.lecture.vo.InstructorInfo;
 import com.goggles.lecture_service.domain.lecture.vo.LectureContent;
 import com.goggles.lecture_service.domain.lecture.vo.Money;
@@ -108,7 +113,7 @@ public class Lecture extends BaseAudit {
 		validateDraftStatus();
 		boolean removed = chapters.removeIf(chapter -> chapter.getId().equals(chapterId));
 		if (!removed) {
-			throw new IllegalArgumentException("존재하지 않는 챕터입니다. chapterId=" + chapterId);
+			throw new ChapterNotFoundException(chapterId); // ← 이걸로 교체
 		}
 	}
 
@@ -145,17 +150,17 @@ public class Lecture extends BaseAudit {
 
 	public void submitForReview() {
 		if (this.status != LectureStatus.DRAFT) {
-			throw new IllegalStateException("공개 요청은 DRAFT 상태에서만 가능합니다.");
+			throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_INVALID_STATUS);
 		}
 		if (chapters.isEmpty()) {
-			throw new IllegalStateException("챕터가 최소 1개 이상 있어야 공개 요청이 가능합니다.");
+			throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_CHAPTER_REQUIRED);
 		}
 		this.status = LectureStatus.PENDING_REVIEW;
 	}
 
 	public void approve() {
 		if (this.status != LectureStatus.PENDING_REVIEW) {
-			throw new IllegalStateException("승인은 PENDING_REVIEW 상태에서만 가능합니다.");
+			throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_INVALID_STATUS);
 		}
 		this.status = LectureStatus.PUBLISHED;
 		this.rejectionReason = null;
@@ -163,10 +168,10 @@ public class Lecture extends BaseAudit {
 
 	public void reject(String reason) {
 		if (this.status != LectureStatus.PENDING_REVIEW) {
-			throw new IllegalStateException("반려는 PENDING_REVIEW 상태에서만 가능합니다.");
+			throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_INVALID_STATUS);
 		}
 		if (reason == null || reason.isBlank()) {
-			throw new IllegalArgumentException("반려 사유는 필수입니다.");
+			throw new BadRequestException("반려 사유는 필수입니다.");
 		}
 		this.status = LectureStatus.DRAFT;
 		this.rejectionReason = reason;
@@ -174,7 +179,7 @@ public class Lecture extends BaseAudit {
 
 	public void hide() {
 		if (this.status != LectureStatus.PUBLISHED) {
-			throw new IllegalStateException("숨김 처리는 PUBLISHED 상태에서만 가능합니다.");
+			throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_INVALID_STATUS);
 		}
 		this.status = LectureStatus.HIDDEN;
 	}
@@ -183,14 +188,14 @@ public class Lecture extends BaseAudit {
 
 	private void validateDraftStatus() {
 		if (this.status != LectureStatus.DRAFT) {
-			throw new IllegalStateException("DRAFT 상태에서만 수정 가능합니다. 현재 상태=" + this.status);
+			throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_INVALID_STATUS);
 		}
 	}
 
 	private void validateDuplicateSortOrder(int sortOrder) {
 		boolean isDuplicate = chapters.stream().anyMatch(c -> c.getSortOrder() == sortOrder);
 		if (isDuplicate) {
-			throw new IllegalArgumentException("이미 존재하는 챕터 순서입니다. sortOrder=" + sortOrder);
+			throw new DuplicateSortOrderException(sortOrder);
 		}
 	}
 
@@ -198,12 +203,12 @@ public class Lecture extends BaseAudit {
 		return chapters.stream()
 			.filter(c -> c.getId().equals(chapterId))
 			.findFirst()
-			.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 챕터입니다. chapterId=" + chapterId));
+			.orElseThrow(() -> new ChapterNotFoundException(chapterId));
 	}
 
 	private static void validateCategory(String category) {
 		if (category == null || category.isBlank()) {
-			throw new IllegalArgumentException("카테고리는 필수입니다.");
+			throw new BadRequestException("카테고리는 필수입니다.");
 		}
 	}
 }

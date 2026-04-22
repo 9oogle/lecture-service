@@ -2,6 +2,7 @@ package com.goggles.lecture_service.domain.lecture.entity;
 
 
 import com.goggles.common.domain.BaseAudit;
+import com.goggles.lecture_service.domain.lecture.exception.InvalidSortOrderException;
 import com.goggles.lecture_service.domain.lecture.vo.ChapterContent;
 import com.goggles.lecture_service.domain.lecture.vo.ChapterDuration;
 import jakarta.persistence.Column;
@@ -80,7 +81,7 @@ public class Chapter extends BaseAudit {
 
 	private static void validateSortOrder(int sortOrder) {
 		if (sortOrder < 1) {
-			throw new IllegalArgumentException("챕터 순서는 1 이상이어야 합니다.");
+			throw new InvalidSortOrderException(sortOrder);
 		}
 	}
 }

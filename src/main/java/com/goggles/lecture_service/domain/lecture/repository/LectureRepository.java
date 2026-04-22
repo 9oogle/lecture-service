@@ -14,7 +14,7 @@ public interface LectureRepository {
 
 	Optional<Lecture> findByIdAndDeletedAtIsNull(UUID id);
 
-	List<Lecture> findAllByInstructorInstructorId(UUID instructorId);
+	List<Lecture> findAllByInstructorId(UUID instructorId);
 
 	List<Lecture> findAllByStatus(LectureStatus status);
 
