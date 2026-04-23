@@ -96,7 +96,7 @@ public class Lecture extends BaseAudit {
 		this.status = LectureStatus.DRAFT;
 	}
 
-	// ── 도메인 메서드 (챕터 관리) ────────────────────────────────────────
+	// 도메인 메서드 (챕터 관리)
 
 	public void addChapter(String title, String content, int sortOrder, int durationSeconds) {
 		validateDraftStatus();
@@ -128,7 +128,7 @@ public class Lecture extends BaseAudit {
 		return Collections.unmodifiableList(chapters);
 	}
 
-	// ── 도메인 메서드 (정보 수정) ──────────────────────────────────
+	// 도메인 메서드 (정보 수정)
 
 	public void updateMetadata(
 		String title,
@@ -146,7 +146,7 @@ public class Lecture extends BaseAudit {
 		this.price = Money.of(priceAmount);
 	}
 
-	// ── 도메인 메서드 (상태 전이) ────────────────────────────────────────
+	// 도메인 메서드 (상태 전이)
 
 	public void submitForReview() {
 		if (this.status != LectureStatus.DRAFT) {
@@ -184,7 +184,7 @@ public class Lecture extends BaseAudit {
 		this.status = LectureStatus.HIDDEN;
 	}
 
-	// ── 내부 검증 및 편의 메서드 ──────────────────────────────────────────────
+	// 내부 검증 및 편의 메서드
 
 	private void validateDraftStatus() {
 		if (this.status != LectureStatus.DRAFT) {
