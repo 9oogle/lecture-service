@@ -1,4 +1,4 @@
-package com.goggles.lecture;
+package com.goggles.lecture_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import com.goggles.config.event.EventConfig;
 
-@Import(EventConfig.class)
+
 @SpringBootApplication
 @EnableJpaAuditing
 public class LectureServiceApplication {
