@@ -1,4 +1,4 @@
-package com.goggles.lecture_service;
+package com.goggles.lecture;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

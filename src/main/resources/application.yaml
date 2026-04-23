@@ -1,8 +1,6 @@
 spring:
   application:
     name: lecture-service
-  config:
-    import: optional:file:.env[.properties]
   datasource:
     url: jdbc:postgresql://localhost:5432/goggles
     username: ${DB_USERNAME:goggles}
@@ -17,7 +15,6 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: false
-    open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -62,7 +59,7 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://${EUREKA_URL1:localhost}:9001/eureka/,http://${EUREKA_URL2:localhost}:9002/eureka/
+      defaultZone: http://localhost:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
   instance:
@@ -86,6 +83,11 @@ management:
   tracing:
     sampling:
       probability: 0.0
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
 
 ---
 spring:
