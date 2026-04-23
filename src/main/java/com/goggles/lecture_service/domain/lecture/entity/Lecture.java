@@ -155,7 +155,7 @@ public class Lecture extends BaseAudit {
 
 		this.content = new LectureContent(title, subtitle, description);
 		this.category = category;
-		this.durationPolicy = durationPolicy;
+		this.durationPolicy = durationPolicy != null ? durationPolicy : DurationPolicy.DAYS_365;
 		this.price = Money.of(priceAmount);
 	}
 
