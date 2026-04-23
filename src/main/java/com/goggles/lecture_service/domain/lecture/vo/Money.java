@@ -1,12 +1,9 @@
 package com.goggles.lecture_service.domain.lecture.vo;
 
-import java.math.BigInteger;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
 
 @Embeddable
 public record Money(

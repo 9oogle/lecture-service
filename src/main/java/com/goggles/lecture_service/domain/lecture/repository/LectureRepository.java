@@ -16,6 +16,5 @@ public interface LectureRepository {
 
 	List<Lecture> findAllByInstructorId(UUID instructorId);
 
-	List<Lecture> findAllByStatus(LectureStatus status);
-
+	List<Lecture> findAllByStatusAndDeletedAtIsNull(LectureStatus status);
 }

@@ -1,30 +1,41 @@
 package com.goggles.lecture_service.domain.lecture.entity;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+import org.hibernate.annotations.SQLRestriction;
+
 import com.goggles.common.domain.BaseAudit;
-import com.goggles.common.exception.BadRequestException;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
 import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
 import com.goggles.lecture_service.domain.lecture.exception.ChapterNotFoundException;
 import com.goggles.lecture_service.domain.lecture.exception.DuplicateSortOrderException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureStatusException;
 import com.goggles.lecture_service.domain.lecture.exception.LectureErrorCode;
-import com.goggles.lecture_service.domain.lecture.vo.InstructorInfo;
-import com.goggles.lecture_service.domain.lecture.vo.LectureContent;
-import com.goggles.lecture_service.domain.lecture.vo.Money;
 import com.goggles.lecture_service.domain.lecture.vo.ChapterContent;
 import com.goggles.lecture_service.domain.lecture.vo.ChapterDuration;
-import jakarta.persistence.*;
+import com.goggles.lecture_service.domain.lecture.vo.Instructor;
+import com.goggles.lecture_service.domain.lecture.vo.LectureContent;
+import com.goggles.lecture_service.domain.lecture.vo.Money;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
 @Entity
 @Table(name = "p_lecture")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Lecture extends BaseAudit {
@@ -34,7 +45,7 @@ public class Lecture extends BaseAudit {
 	private UUID id = UUID.randomUUID();
 
 	@Embedded
-	private InstructorInfo instructor;
+	private Instructor instructor;
 
 	@Column(nullable = false, length = 50)
 	private String category;
@@ -74,7 +85,7 @@ public class Lecture extends BaseAudit {
 		validateCategory(category);
 
 		return new Lecture(
-			new InstructorInfo(instructorId, instructorName),
+			new Instructor(instructorId, instructorName),
 			category,
 			new LectureContent(title, subtitle, description),
 			durationPolicy,
@@ -83,7 +94,7 @@ public class Lecture extends BaseAudit {
 	}
 
 	private Lecture(
-		InstructorInfo instructor,
+		Instructor instructor,
 		String category,
 		LectureContent content,
 		DurationPolicy durationPolicy,
@@ -120,6 +131,8 @@ public class Lecture extends BaseAudit {
 	public void reorderChapter(UUID chapterId, int newSortOrder) {
 		validateDraftStatus();
 		Chapter target = findChapterById(chapterId);
+		if (target.getSortOrder() == newSortOrder)
+			return;
 		validateDuplicateSortOrder(newSortOrder);
 		target.updateSortOrder(newSortOrder);
 	}
@@ -156,6 +169,8 @@ public class Lecture extends BaseAudit {
 			throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_CHAPTER_REQUIRED);
 		}
 		this.status = LectureStatus.PENDING_REVIEW;
+		//리뷰 재신청 시 이전 이유 삭제
+		this.rejectionReason = null;
 	}
 
 	public void approve() {
@@ -171,7 +186,7 @@ public class Lecture extends BaseAudit {
 			throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_INVALID_STATUS);
 		}
 		if (reason == null || reason.isBlank()) {
-			throw new BadRequestException("반려 사유는 필수입니다.");
+			throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_REJECTION_REASON_REQUIRED);
 		}
 		this.status = LectureStatus.DRAFT;
 		this.rejectionReason = reason;
@@ -208,7 +223,7 @@ public class Lecture extends BaseAudit {
 
 	private static void validateCategory(String category) {
 		if (category == null || category.isBlank()) {
-			throw new BadRequestException("카테고리는 필수입니다.");
+			throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_CATEGORY_REQUIRED);
 		}
 	}
 }

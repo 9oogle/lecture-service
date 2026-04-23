@@ -39,7 +39,8 @@ public class LectureRepositoryImpl implements LectureRepository {
 	}
 
 	@Override
-	public List<Lecture> findAllByStatus(LectureStatus status) {
-		return lectureJpaRepository.findAllByStatus(status);
+
+	public List<Lecture> findAllByStatusAndDeletedAtIsNull(LectureStatus status) {
+		return lectureJpaRepository.findAllByStatusAndDeletedAtIsNull(status);
 	}
 }

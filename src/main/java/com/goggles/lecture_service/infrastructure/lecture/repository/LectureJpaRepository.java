@@ -15,11 +15,8 @@ public interface LectureJpaRepository extends JpaRepository<Lecture, UUID> {
 
 	Optional<Lecture> findByIdAndDeletedAtIsNull(UUID id);
 
-	@Query(
-		value = "SELECT * FROM lecture.p_lecture WHERE instructor_id = :instructorId AND deleted_at IS NULL",
-		nativeQuery = true
-	)
+	@Query("SELECT l FROM Lecture l WHERE l.instructor.id = :instructorId")
 	List<Lecture> findAllByInstructorId(@Param("instructorId") UUID instructorId);
 
-	List<Lecture> findAllByStatus(LectureStatus status);
+	List<Lecture> findAllByStatusAndDeletedAtIsNull(LectureStatus status);
 }

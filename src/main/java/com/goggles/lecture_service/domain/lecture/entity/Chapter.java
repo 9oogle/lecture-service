@@ -1,10 +1,12 @@
 package com.goggles.lecture_service.domain.lecture.entity;
 
+import java.util.UUID;
 
 import com.goggles.common.domain.BaseAudit;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidSortOrderException;
 import com.goggles.lecture_service.domain.lecture.vo.ChapterContent;
 import com.goggles.lecture_service.domain.lecture.vo.ChapterDuration;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -14,7 +16,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -66,16 +67,16 @@ public class Chapter extends BaseAudit {
 		return lecture.getId();
 	}
 
-	public void updateContent(ChapterContent newContent) {
+	void updateContent(ChapterContent newContent) {
 		this.content = newContent;
 	}
 
-	public void updateSortOrder(int newSortOrder) {
+	void updateSortOrder(int newSortOrder) {
 		validateSortOrder(newSortOrder);
 		this.sortOrder = newSortOrder;
 	}
 
-	public void updateDuration(ChapterDuration newDuration) {
+	void updateDuration(ChapterDuration newDuration) {
 		this.duration = newDuration;
 	}
 
