@@ -35,7 +35,7 @@ class LectureQueryServiceImplTest {
   @BeforeEach
   void setUp() {
     lectureId = UUID.randomUUID();
-    // DRAFT 상태로 생성 (status 세팅은 각 테스트에서)
+
     lecture =
         Lecture.create(
             UUID.randomUUID(),
@@ -59,7 +59,8 @@ class LectureQueryServiceImplTest {
     void getLectureDetail_success() {
       // given
       ReflectionTestUtils.setField(lecture, "status", LectureStatus.PUBLISHED);
-      when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
+      when(lectureRepository.findByIdAndStatus(lectureId, LectureStatus.PUBLISHED))
+          .thenReturn(Optional.of(lecture));
 
       // when
       LectureDetail result = lectureQueryService.getLectureDetail(lectureId);
@@ -72,41 +73,44 @@ class LectureQueryServiceImplTest {
       assertThat(result.category()).isEqualTo("IT");
       assertThat(result.price()).isEqualTo(50000L);
       assertThat(result.status()).isEqualTo(LectureStatus.PUBLISHED);
-      verify(lectureRepository, times(1)).findById(lectureId);
+      verify(lectureRepository, times(1)).findByIdAndStatus(lectureId, LectureStatus.PUBLISHED);
     }
 
     @Test
     @DisplayName("실패: 강의를 찾을 수 없음")
     void getLectureDetail_notFound() {
       // given
-      when(lectureRepository.findById(lectureId)).thenReturn(Optional.empty());
+      when(lectureRepository.findByIdAndStatus(lectureId, LectureStatus.PUBLISHED))
+          .thenReturn(Optional.empty());
 
       // when & then
       assertThatThrownBy(() -> lectureQueryService.getLectureDetail(lectureId))
           .isInstanceOf(LectureNotFoundException.class);
-      verify(lectureRepository, times(1)).findById(lectureId);
+      verify(lectureRepository, times(1)).findByIdAndStatus(lectureId, LectureStatus.PUBLISHED);
     }
 
     @Test
     @DisplayName("실패: DRAFT 상태 강의 조회 불가")
     void getLectureDetail_notPublished() {
-      // given - DRAFT 상태 그대로 (setUp에서 이미 DRAFT)
-      when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
+      // given
+      when(lectureRepository.findByIdAndStatus(lectureId, LectureStatus.PUBLISHED))
+          .thenReturn(Optional.empty());
 
       // when & then
       assertThatThrownBy(() -> lectureQueryService.getLectureDetail(lectureId))
           .isInstanceOf(LectureNotFoundException.class);
-      verify(lectureRepository, times(1)).findById(lectureId);
+      verify(lectureRepository, times(1)).findByIdAndStatus(lectureId, LectureStatus.PUBLISHED);
     }
 
     @Test
     @DisplayName("성공: 챕터 포함 강의 상세 조회")
     void getLectureDetail_withChapters() {
-      // given - DRAFT 상태에서 챕터 먼저 추가 후 PUBLISHED로 변경
+      // given
       lecture.addChapter("챕터1", "챕터1 내용", 1, 3600);
       lecture.addChapter("챕터2", "챕터2 내용", 2, 7200);
       ReflectionTestUtils.setField(lecture, "status", LectureStatus.PUBLISHED);
-      when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
+      when(lectureRepository.findByIdAndStatus(lectureId, LectureStatus.PUBLISHED))
+          .thenReturn(Optional.of(lecture));
 
       // when
       LectureDetail result = lectureQueryService.getLectureDetail(lectureId);
@@ -115,7 +119,7 @@ class LectureQueryServiceImplTest {
       assertThat(result.chapters()).hasSize(2);
       assertThat(result.chapters().get(0).title()).isEqualTo("챕터1");
       assertThat(result.chapters().get(1).sortOrder()).isEqualTo(2);
-      verify(lectureRepository, times(1)).findById(lectureId);
+      verify(lectureRepository, times(1)).findByIdAndStatus(lectureId, LectureStatus.PUBLISHED);
     }
   }
 }
