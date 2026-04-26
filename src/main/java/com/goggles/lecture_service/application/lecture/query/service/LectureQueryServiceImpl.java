@@ -38,17 +38,9 @@ public class LectureQueryServiceImpl implements LectureQueryService {
   public LectureDetail getLectureDetail(UUID lectureId) {
     Lecture lecture =
         lectureRepository
-            .findById(lectureId)
+            .findByIdAndStatus(lectureId, LectureStatus.PUBLISHED)
             .orElseThrow(() -> new LectureNotFoundException(lectureId));
 
-    validatePublished(lecture);
-
     return LectureDetail.from(lecture);
-  }
-
-  private void validatePublished(Lecture lecture) {
-    if (lecture.getStatus() != LectureStatus.PUBLISHED) {
-      throw new LectureNotFoundException(lecture.getId());
-    }
   }
 }

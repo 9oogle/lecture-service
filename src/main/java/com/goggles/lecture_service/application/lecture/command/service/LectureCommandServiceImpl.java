@@ -17,6 +17,7 @@ public class LectureCommandServiceImpl implements LectureCommandService {
 
   @Override
   public LectureCreateResult createLecture(LectureCreateCommand command) {
+    // Todo: APPROVED 상태 강사만 생성 가능 조건 추가
     Lecture lecture =
         Lecture.create(
             command.instructorId(),

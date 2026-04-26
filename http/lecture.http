@@ -91,4 +91,4 @@ X-User-Name: {{instructorName}}
 GET http://{{host}}/api/v1/lectures?page=0&size=10
 
 ### 7. 강의 상세 조회 (기존, 위에서 생성한 것 - DRAFT라 404 예상)
-GET http://{{host}}/api/v1/lectures/{{lectureId}}}
+GET http://{{host}}/api/v1/lectures/{{createdLectureId}}

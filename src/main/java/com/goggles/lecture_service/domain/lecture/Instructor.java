@@ -19,6 +19,7 @@ public class Instructor {
     if (instructorId == null) throw new IllegalArgumentException("강사 ID는 필수입니다.");
     if (instructorName == null || instructorName.isBlank())
       throw new IllegalArgumentException("강사 이름은 필수입니다.");
+    if (instructorName.length() > 100) throw new IllegalArgumentException("강사 이름은 100자 이하여야 합니다.");
     this.instructorId = instructorId;
     this.instructorName = instructorName;
   }
