@@ -4,5 +4,5 @@ import com.goggles.lecture_service.application.lecture.command.dto.LectureCreate
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 
 public interface LectureCommandService {
-	LectureCreateResult createLecture(LectureCreateCommand command);
+  LectureCreateResult createLecture(LectureCreateCommand command);
 }
