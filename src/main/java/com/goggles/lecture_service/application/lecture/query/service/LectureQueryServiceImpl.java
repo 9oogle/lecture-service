@@ -25,7 +25,6 @@ public class LectureQueryServiceImpl implements LectureQueryService {
 
   /*
    * TODO: common-library의 CommonPageResponse 에 map(Function) 메서드가 추가되면
-   *   아래 호출을 다음과 같이 리팩토링
    */
 
   @Override
