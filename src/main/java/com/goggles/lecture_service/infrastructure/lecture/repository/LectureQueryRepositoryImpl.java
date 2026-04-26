@@ -3,13 +3,16 @@ package com.goggles.lecture_service.infrastructure.lecture.repository;
 import static com.goggles.lecture_service.domain.lecture.QLecture.*;
 
 import com.goggles.common.pagination.CommonPageRequest;
+import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.LectureSearchCondition;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
 import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
+import com.goggles.lecture_service.domain.lecture.repository.LectureQueryRepository;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -25,8 +28,10 @@ public class LectureQueryRepositoryImpl implements LectureQueryRepository {
   private final JPAQueryFactory queryFactory;
 
   @Override
-  public Page<Lecture> findAllByCondition(
-      LectureSearchCondition condition, CommonPageRequest pageRequest) {
+  public <T> CommonPageResponse<T> findAllByCondition(
+      LectureSearchCondition condition,
+      CommonPageRequest pageRequest,
+      Function<Lecture, T> mapper) {
 
     Pageable pageable = pageRequest.toPageable(Sort.by(Sort.Direction.DESC, "createdAt"));
 
@@ -60,11 +65,12 @@ public class LectureQueryRepositoryImpl implements LectureQueryRepository {
                 durationPolicyEq(condition.durationPolicy()))
             .fetchOne();
 
-    return new PageImpl<>(content, pageable, total != null ? total : 0L);
+    // 3. Page → CommonPageResponse 변환 + 매퍼 적용 (인프라 책임)
+    Page<Lecture> page = new PageImpl<>(content, pageable, total != null ? total : 0L);
+    return CommonPageResponse.of(page, mapper);
   }
 
   // ── BooleanExpression (null 반환 시 where에서 자동 제외) ──
-
   private BooleanExpression keywordContains(String keyword) {
     if (!StringUtils.hasText(keyword)) {
       return null;

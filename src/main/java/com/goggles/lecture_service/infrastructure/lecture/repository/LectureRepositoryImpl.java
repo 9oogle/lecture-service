@@ -1,14 +1,11 @@
 package com.goggles.lecture_service.infrastructure.lecture.repository;
 
-import com.goggles.common.pagination.CommonPageRequest;
 import com.goggles.lecture_service.domain.lecture.Lecture;
-import com.goggles.lecture_service.domain.lecture.LectureSearchCondition;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -16,7 +13,6 @@ import org.springframework.stereotype.Repository;
 public class LectureRepositoryImpl implements LectureRepository {
 
   private final LectureJpaRepository lectureJpaRepository;
-  private final LectureQueryRepository lectureQueryRepository;
 
   @Override
   public Lecture save(Lecture lecture) {
@@ -31,12 +27,6 @@ public class LectureRepositoryImpl implements LectureRepository {
   @Override
   public List<Lecture> findAllByInstructorId(UUID instructorId) {
     return lectureJpaRepository.findAllByInstructor_InstructorId(instructorId);
-  }
-
-  @Override
-  public Page<Lecture> findAllByCondition(
-      LectureSearchCondition condition, CommonPageRequest pageRequest) {
-    return lectureQueryRepository.findAllByCondition(condition, pageRequest);
   }
 
   @Override

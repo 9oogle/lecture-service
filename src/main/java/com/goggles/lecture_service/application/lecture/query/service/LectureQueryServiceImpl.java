@@ -8,10 +8,10 @@ import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.LectureSearchCondition;
 import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
 import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
+import com.goggles.lecture_service.domain.lecture.repository.LectureQueryRepository;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,12 +21,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class LectureQueryServiceImpl implements LectureQueryService {
 
   private final LectureRepository lectureRepository;
+  private final LectureQueryRepository lectureQueryRepository;
+
+  /*
+   * TODO: common-library의 CommonPageResponse 에 map(Function) 메서드가 추가되면
+   *   아래 호출을 다음과 같이 리팩토링
+   */
 
   @Override
   public CommonPageResponse<LectureSummary> getLectures(
       LectureSearchCondition condition, CommonPageRequest pageRequest) {
-    Page<Lecture> page = lectureRepository.findAllByCondition(condition, pageRequest);
-    return CommonPageResponse.of(page, LectureSummary::from);
+    return lectureQueryRepository.findAllByCondition(condition, pageRequest, LectureSummary::from);
   }
 
   @Override
