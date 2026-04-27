@@ -6,17 +6,19 @@ import jakarta.persistence.Embeddable;
 @Embeddable
 public class ChapterDuration {
 
-  @Column(name = "duration_seconds", nullable = false)
-  private int seconds;
+	@Column(name = "duration_seconds", nullable = false)
+	private int seconds;
 
-  protected ChapterDuration() {}
+	protected ChapterDuration() {
+	}
 
-  public ChapterDuration(int seconds) {
-    if (seconds < 0) throw new IllegalArgumentException("영상 길이는 0 이상이어야 합니다.");
-    this.seconds = seconds;
-  }
+	public ChapterDuration(int seconds) {
+		if (seconds < 1)
+			throw new IllegalArgumentException("영상 길이는 1 이상이어야 합니다.");
+		this.seconds = seconds;
+	}
 
-  public int getSeconds() {
-    return seconds;
-  }
+	public int getSeconds() {
+		return seconds;
+	}
 }
