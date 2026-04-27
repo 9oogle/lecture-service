@@ -16,8 +16,8 @@ public class ChapterDuration {
   protected ChapterDuration() {}
 
   public ChapterDuration(int seconds) {
-    if (seconds < 0)
-      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_DURATION_NEGATIVE);
+    if (seconds < 1)
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_DURATION_INVALID);
     this.seconds = seconds;
   }
 }

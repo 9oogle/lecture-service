@@ -6,8 +6,10 @@ import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
 import com.goggles.lecture_service.domain.lecture.exception.ChapterNotFoundException;
 import com.goggles.lecture_service.domain.lecture.exception.DuplicateSortOrderException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidCategoryException;
+import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureFieldException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureStatusException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidRejectionReasonException;
+import com.goggles.lecture_service.domain.lecture.exception.LectureErrorCode;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -156,7 +158,7 @@ public class Lecture extends BaseAudit {
       throw new InvalidLectureStatusException(id, status);
     }
     if (chapters.isEmpty()) {
-      throw new InvalidLectureStatusException(id, status);
+      throw new InvalidLectureFieldException(LectureErrorCode.LECTURE_CHAPTER_REQUIRED);
     }
     this.status = LectureStatus.PENDING_REVIEW;
     // 리뷰 재신청 시 이전 이유 삭제

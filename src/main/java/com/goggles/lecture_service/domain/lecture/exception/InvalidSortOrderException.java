@@ -4,6 +4,6 @@ import com.goggles.common.exception.BadRequestException;
 
 public class InvalidSortOrderException extends BadRequestException {
   public InvalidSortOrderException(int sortOrder) {
-    super(LectureErrorCode.CHAPTER_DUPLICATE_SORT_ORDER.getMessage() + " sortOrder=" + sortOrder);
+    super(LectureErrorCode.CHAPTER_INVALID_SORT_ORDER.getMessage() + " sortOrder=" + sortOrder);
   }
 }

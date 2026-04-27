@@ -23,7 +23,7 @@ public enum LectureErrorCode {
   CHAPTER_INVALID_SORT_ORDER("챕터 순서는 1 이상이어야 합니다."),
   CHAPTER_TITLE_REQUIRED("챕터 제목은 필수입니다."),
   CHAPTER_TITLE_TOO_LONG("챕터 제목은 200자 이하여야 합니다."),
-  CHAPTER_DURATION_NEGATIVE("영상 길이는 0 이상이어야 합니다."),
+  CHAPTER_DURATION_INVALID("영상 길이는 1 이상이어야 합니다."),
 
   // 가격
   PRICE_NEGATIVE("가격은 0원 이상이어야 합니다."),
