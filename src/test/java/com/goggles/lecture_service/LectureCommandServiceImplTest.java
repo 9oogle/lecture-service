@@ -12,8 +12,10 @@ import com.goggles.lecture_service.application.lecture.command.service.LectureCo
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
 import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
+import com.goggles.lecture_service.domain.lecture.exception.DuplicateSortOrderException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidCategoryException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureFieldException;
+import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureStatusException;
 import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
 import java.util.Optional;
@@ -158,12 +160,13 @@ class LectureCommandServiceImplTest {
     @DisplayName("성공: DRAFT 강의에 챕터를 추가한다")
     void createChapter_success() {
       // given
-      ChapterCreateCommand command = new ChapterCreateCommand(lectureId, "1강", "자바 소개", 1, 600);
+      ChapterCreateCommand chapterCommand =
+          new ChapterCreateCommand(lectureId, "1강", "자바 소개", 1, 600);
 
       when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
 
       // when
-      ChapterCreateResult result = lectureCommandService.createChapter(command);
+      ChapterCreateResult result = lectureCommandService.createChapter(chapterCommand);
 
       // then
       assertThat(result).isNotNull();
@@ -178,16 +181,59 @@ class LectureCommandServiceImplTest {
     void createChapter_lectureNotFound_throws() {
       // given
       UUID notFoundId = UUID.randomUUID();
-      ChapterCreateCommand command = new ChapterCreateCommand(notFoundId, "1강", "자바 소개", 1, 600);
+      ChapterCreateCommand chapterCommand =
+          new ChapterCreateCommand(notFoundId, "1강", "자바 소개", 1, 600);
 
       when(lectureRepository.findById(notFoundId)).thenReturn(Optional.empty());
 
       // when & then
-      assertThatThrownBy(() -> lectureCommandService.createChapter(command))
+      assertThatThrownBy(() -> lectureCommandService.createChapter(chapterCommand))
           .isInstanceOf(LectureNotFoundException.class);
 
       verify(lectureRepository).findById(notFoundId);
       verify(lectureRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("실패: DRAFT 상태가 아닌 강의에 챕터 추가 시 예외 발생")
+    void createChapter_notDraftStatus_throws() {
+      // given - PENDING_REVIEW 상태로 만들기 위해 챕터 1개 추가 후 submitForReview
+      lecture.addChapter("dummy", "dummy", 1, 600);
+      lecture.submitForReview();
+
+      ChapterCreateCommand chapterCommand = new ChapterCreateCommand(lectureId, "2강", "내용", 2, 600);
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
+
+      // when & then
+      assertThatThrownBy(() -> lectureCommandService.createChapter(chapterCommand))
+          .isInstanceOf(InvalidLectureStatusException.class);
+    }
+
+    @Test
+    @DisplayName("실패: sortOrder 가 중복되면 예외 발생")
+    void createChapter_duplicateSortOrder_throws() {
+      // given - 이미 sortOrder=1인 챕터 추가
+      lecture.addChapter("1강", "내용", 1, 600);
+
+      ChapterCreateCommand chapterCommand =
+          new ChapterCreateCommand(lectureId, "다른강", "내용", 1, 600);
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
+
+      // when & then
+      assertThatThrownBy(() -> lectureCommandService.createChapter(chapterCommand))
+          .isInstanceOf(DuplicateSortOrderException.class);
+    }
+
+    @Test
+    @DisplayName("실패: durationSeconds = 0 이면 예외 발생 (정책 강화)")
+    void createChapter_zeroDuration_throws() {
+      // given
+      ChapterCreateCommand chapterCommand = new ChapterCreateCommand(lectureId, "1강", "내용", 1, 0);
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
+
+      // when & then
+      assertThatThrownBy(() -> lectureCommandService.createChapter(chapterCommand))
+          .isInstanceOf(InvalidLectureFieldException.class);
     }
   }
 }
