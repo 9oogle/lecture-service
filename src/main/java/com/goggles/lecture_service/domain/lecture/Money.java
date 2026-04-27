@@ -15,7 +15,6 @@ public class Money {
 
   protected Money() {}
 
-  // Money.java
   private Money(Long amount) {
     if (amount == null || amount < 0L) {
       throw new InvalidLectureFieldException(LectureErrorCode.PRICE_NEGATIVE);

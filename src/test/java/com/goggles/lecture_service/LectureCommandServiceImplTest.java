@@ -136,58 +136,58 @@ class LectureCommandServiceImplTest {
           .isInstanceOf(InvalidLectureFieldException.class);
       verify(lectureRepository, times(0)).save(any(Lecture.class));
     }
+  }
 
-    @Nested
-    @DisplayName("챕터 생성")
-    class CreateChapter {
+  @Nested
+  @DisplayName("챕터 생성")
+  class CreateChapter {
 
-      private UUID lectureId;
-      private Lecture lecture;
+    private UUID lectureId;
+    private Lecture lecture;
 
-      @BeforeEach
-      void setUp() {
-        lecture =
-            Lecture.create(
-                instructorId, "강사이름", "IT", "자바 강의", "부제", "설명", DurationPolicy.DAYS_365, 50000L);
+    @BeforeEach
+    void setUp() {
+      lecture =
+          Lecture.create(
+              instructorId, "강사이름", "IT", "자바 강의", "부제", "설명", DurationPolicy.DAYS_365, 50000L);
 
-        lectureId = lecture.getId();
-      }
+      lectureId = lecture.getId();
+    }
 
-      @Test
-      @DisplayName("성공: DRAFT 강의에 챕터를 추가한다")
-      void createChapter_success() {
-        // given
-        ChapterCreateCommand command = new ChapterCreateCommand(lectureId, "1강", "자바 소개", 1, 600);
+    @Test
+    @DisplayName("성공: DRAFT 강의에 챕터를 추가한다")
+    void createChapter_success() {
+      // given
+      ChapterCreateCommand command = new ChapterCreateCommand(lectureId, "1강", "자바 소개", 1, 600);
 
-        when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
 
-        // when
-        ChapterCreateResult result = lectureCommandService.createChapter(command);
+      // when
+      ChapterCreateResult result = lectureCommandService.createChapter(command);
 
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.lectureId()).isEqualTo(lectureId);
-        assertThat(result.chapterId()).isNotNull();
+      // then
+      assertThat(result).isNotNull();
+      assertThat(result.lectureId()).isEqualTo(lectureId);
+      assertThat(result.chapterId()).isNotNull();
 
-        verify(lectureRepository).findById(lectureId);
-      }
+      verify(lectureRepository).findById(lectureId);
+    }
 
-      @Test
-      @DisplayName("실패: 존재하지 않는 강의이면 예외 발생")
-      void createChapter_lectureNotFound_throws() {
-        // given
-        UUID notFoundId = UUID.randomUUID();
-        ChapterCreateCommand command = new ChapterCreateCommand(notFoundId, "1강", "자바 소개", 1, 600);
+    @Test
+    @DisplayName("실패: 존재하지 않는 강의이면 예외 발생")
+    void createChapter_lectureNotFound_throws() {
+      // given
+      UUID notFoundId = UUID.randomUUID();
+      ChapterCreateCommand command = new ChapterCreateCommand(notFoundId, "1강", "자바 소개", 1, 600);
 
-        when(lectureRepository.findById(notFoundId)).thenReturn(Optional.empty());
+      when(lectureRepository.findById(notFoundId)).thenReturn(Optional.empty());
 
-        // when & then
-        assertThatThrownBy(() -> lectureCommandService.createChapter(command))
-            .isInstanceOf(LectureNotFoundException.class);
+      // when & then
+      assertThatThrownBy(() -> lectureCommandService.createChapter(command))
+          .isInstanceOf(LectureNotFoundException.class);
 
-        verify(lectureRepository).findById(notFoundId);
-        verify(lectureRepository, never()).save(any());
-      }
+      verify(lectureRepository).findById(notFoundId);
+      verify(lectureRepository, never()).save(any());
     }
   }
 }
