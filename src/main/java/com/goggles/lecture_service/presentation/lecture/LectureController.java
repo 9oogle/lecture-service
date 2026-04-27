@@ -3,9 +3,12 @@ package com.goggles.lecture_service.presentation.lecture;
 import com.goggles.common.pagination.CommonPageRequest;
 import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.application.lecture.LectureService;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureDetail;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureListQuery;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureSummary;
+import com.goggles.lecture_service.presentation.lecture.dto.ChapterCreateRequest;
+import com.goggles.lecture_service.presentation.lecture.dto.ChapterCreateResponse;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureCreateRequest;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureCreateResponse;
 import jakarta.validation.Valid;
@@ -52,5 +55,15 @@ public class LectureController {
       @Valid @RequestBody LectureCreateRequest request) {
     return LectureCreateResponse.from(
         lectureService.createLecture(request.toCommand(instructorId, instructorName)));
+  }
+
+  // 챕터 생성
+  @PostMapping("/{lectureId}/chapters")
+  @ResponseStatus(HttpStatus.CREATED)
+  public ChapterCreateResponse createChapter(
+      // TODO(#3 user-service 로그인 API 연동 후): instructorId 일치 검증
+      @PathVariable UUID lectureId, @Valid @RequestBody ChapterCreateRequest request) {
+    ChapterCreateResult result = lectureService.createChapter(request.toCommand(lectureId));
+    return ChapterCreateResponse.from(result);
   }
 }

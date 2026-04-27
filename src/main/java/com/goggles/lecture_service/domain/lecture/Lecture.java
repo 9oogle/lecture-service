@@ -8,7 +8,6 @@ import com.goggles.lecture_service.domain.lecture.exception.DuplicateSortOrderEx
 import com.goggles.lecture_service.domain.lecture.exception.InvalidCategoryException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureStatusException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidRejectionReasonException;
-import com.goggles.lecture_service.domain.lecture.exception.LectureErrorCode;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -99,15 +98,17 @@ public class Lecture extends BaseAudit {
 
   // 도메인 메서드 (챕터 관리)
 
-  public void addChapter(String title, String content, int sortOrder, int durationSeconds) {
+  public Chapter addChapter(String title, String content, int sortOrder, int durationSeconds) {
     validateDraftStatus();
     validateDuplicateSortOrder(sortOrder);
 
-    // VO 생성을 엔티티 내부에서 처리하여 외부 의존성 감소
     ChapterContent chapterContent = new ChapterContent(title, content);
     ChapterDuration chapterDuration = new ChapterDuration(durationSeconds);
 
-    chapters.add(Chapter.create(this, chapterContent, sortOrder, chapterDuration));
+    Chapter chapter = Chapter.create(this, chapterContent, sortOrder, chapterDuration);
+    chapters.add(chapter);
+
+    return chapter;
   }
 
   public void removeChapter(UUID chapterId) {
@@ -152,10 +153,10 @@ public class Lecture extends BaseAudit {
 
   public void submitForReview() {
     if (this.status != LectureStatus.DRAFT) {
-      throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_INVALID_STATUS);
+      throw new InvalidLectureStatusException(id, status);
     }
     if (chapters.isEmpty()) {
-      throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_CHAPTER_REQUIRED);
+      throw new InvalidLectureStatusException(id, status);
     }
     this.status = LectureStatus.PENDING_REVIEW;
     // 리뷰 재신청 시 이전 이유 삭제
@@ -164,7 +165,7 @@ public class Lecture extends BaseAudit {
 
   public void approve() {
     if (this.status != LectureStatus.PENDING_REVIEW) {
-      throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_INVALID_STATUS);
+      throw new InvalidLectureStatusException(id, status);
     }
     this.status = LectureStatus.PUBLISHED;
     this.rejectionReason = null;
@@ -172,7 +173,7 @@ public class Lecture extends BaseAudit {
 
   public void reject(String reason) {
     if (this.status != LectureStatus.PENDING_REVIEW) {
-      throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_INVALID_STATUS);
+      throw new InvalidLectureStatusException(id, status);
     }
     if (reason == null || reason.isBlank()) {
       throw new InvalidRejectionReasonException();
@@ -183,7 +184,7 @@ public class Lecture extends BaseAudit {
 
   public void hide() {
     if (this.status != LectureStatus.PUBLISHED) {
-      throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_INVALID_STATUS);
+      throw new InvalidLectureStatusException(id, status);
     }
     this.status = LectureStatus.HIDDEN;
   }
@@ -192,7 +193,7 @@ public class Lecture extends BaseAudit {
 
   private void validateDraftStatus() {
     if (this.status != LectureStatus.DRAFT) {
-      throw new InvalidLectureStatusException(LectureErrorCode.LECTURE_INVALID_STATUS);
+      throw new InvalidLectureStatusException(id, status);
     }
   }
 

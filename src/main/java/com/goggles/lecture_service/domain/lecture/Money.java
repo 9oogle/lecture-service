@@ -1,9 +1,13 @@
 package com.goggles.lecture_service.domain.lecture;
 
+import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureFieldException;
+import com.goggles.lecture_service.domain.lecture.exception.LectureErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.Getter;
 
 @Embeddable
+@Getter
 public class Money {
 
   @Column(name = "price", nullable = false)
@@ -11,18 +15,15 @@ public class Money {
 
   protected Money() {}
 
+  // Money.java
   private Money(Long amount) {
     if (amount == null || amount < 0L) {
-      throw new IllegalArgumentException("가격은 0원 이상이어야 합니다.");
+      throw new InvalidLectureFieldException(LectureErrorCode.PRICE_NEGATIVE);
     }
     this.amount = amount;
   }
 
   public static Money of(Long amount) {
     return new Money(amount);
-  }
-
-  public Long getAmount() {
-    return amount;
   }
 }

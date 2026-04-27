@@ -1,9 +1,13 @@
 package com.goggles.lecture_service.domain.lecture;
 
+import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureFieldException;
+import com.goggles.lecture_service.domain.lecture.exception.LectureErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.Getter;
 
 @Embeddable
+@Getter
 public class ChapterContent {
 
   @Column(nullable = false, length = 200)
@@ -15,17 +19,11 @@ public class ChapterContent {
   protected ChapterContent() {}
 
   public ChapterContent(String title, String content) {
-    if (title == null || title.isBlank()) throw new IllegalArgumentException("챕터 제목은 필수입니다.");
-    if (title.length() > 200) throw new IllegalArgumentException("챕터 제목은 200자 이하여야 합니다.");
+    if (title == null || title.isBlank())
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_TITLE_REQUIRED);
+    if (title.length() > 200)
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_TITLE_TOO_LONG);
     this.title = title;
     this.content = content;
-  }
-
-  public String getTitle() {
-    return title;
-  }
-
-  public String getContent() {
-    return content;
   }
 }
