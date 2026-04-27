@@ -1,22 +1,18 @@
 package com.goggles.lecture_service.infrastructure.lecture.repository;
 
+import com.goggles.lecture_service.domain.lecture.Lecture;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.goggles.lecture_service.domain.lecture.entity.Lecture;
-import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
-
 public interface LectureJpaRepository extends JpaRepository<Lecture, UUID> {
 
-	Optional<Lecture> findByIdAndDeletedAtIsNull(UUID id);
+  List<Lecture> findAllByInstructor_InstructorId(UUID instructorId);
 
-	@Query("SELECT l FROM Lecture l WHERE l.instructor.id = :instructorId")
-	List<Lecture> findAllByInstructorId(@Param("instructorId") UUID instructorId);
-
-	List<Lecture> findAllByStatusAndDeletedAtIsNull(LectureStatus status);
+  // soft delete 필터 우회를 위해 native query 사용
+  @Query(value = "SELECT * FROM lecture.p_lecture WHERE id = :id", nativeQuery = true)
+  Optional<Lecture> findByIdIncludeDeleted(@Param("id") UUID id);
 }
