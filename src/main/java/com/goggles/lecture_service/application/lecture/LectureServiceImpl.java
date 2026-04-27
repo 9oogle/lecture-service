@@ -2,6 +2,8 @@ package com.goggles.lecture_service.application.lecture;
 
 import com.goggles.common.pagination.CommonPageRequest;
 import com.goggles.common.pagination.CommonPageResponse;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.service.LectureCommandService;
@@ -34,5 +36,10 @@ public class LectureServiceImpl implements LectureService {
   @Override
   public LectureCreateResult createLecture(LectureCreateCommand command) {
     return lectureCommandService.createLecture(command);
+  }
+
+  @Override
+  public ChapterCreateResult createChapter(ChapterCreateCommand command) {
+    return lectureCommandService.createChapter(command);
   }
 }
