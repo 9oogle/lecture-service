@@ -1,7 +1,9 @@
 package com.goggles.lecture_service.domain.lecture;
 
 import com.goggles.common.domain.BaseAudit;
+import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureFieldException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidSortOrderException;
+import com.goggles.lecture_service.domain.lecture.exception.LectureErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -51,6 +53,12 @@ public class Chapter extends BaseAudit {
 
   private Chapter(
       Lecture lecture, ChapterContent content, int sortOrder, ChapterDuration duration) {
+    if (lecture == null)
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_LECTURE_REQUIRED);
+    if (content == null)
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_CONTENT_REQUIRED);
+    if (duration == null)
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_DURATION_REQUIRED);
     this.lecture = lecture;
     this.content = content;
     this.sortOrder = sortOrder;
@@ -62,6 +70,8 @@ public class Chapter extends BaseAudit {
   }
 
   void updateContent(ChapterContent newContent) {
+    if (newContent == null)
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_CONTENT_REQUIRED);
     this.content = newContent;
   }
 
@@ -71,6 +81,8 @@ public class Chapter extends BaseAudit {
   }
 
   void updateDuration(ChapterDuration newDuration) {
+    if (newDuration == null)
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_DURATION_REQUIRED);
     this.duration = newDuration;
   }
 

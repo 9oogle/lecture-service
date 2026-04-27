@@ -100,7 +100,7 @@ public class Lecture extends BaseAudit {
 
   // 도메인 메서드 (챕터 관리)
 
-  public Chapter addChapter(String title, String content, int sortOrder, int durationSeconds) {
+  public UUID addChapter(String title, String content, int sortOrder, int durationSeconds) {
     validateDraftStatus();
     validateDuplicateSortOrder(sortOrder);
 
@@ -110,7 +110,7 @@ public class Lecture extends BaseAudit {
     Chapter chapter = Chapter.create(this, chapterContent, sortOrder, chapterDuration);
     chapters.add(chapter);
 
-    return chapter;
+    return chapter.getId();
   }
 
   public void removeChapter(UUID chapterId) {

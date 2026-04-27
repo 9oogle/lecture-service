@@ -4,10 +4,10 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreate
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
-import com.goggles.lecture_service.domain.lecture.Chapter;
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,10 +45,10 @@ public class LectureCommandServiceImpl implements LectureCommandService {
             .findById(command.lectureId())
             .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
 
-    Chapter chapter =
+    UUID chapterId =
         lecture.addChapter(
             command.title(), command.content(), command.sortOrder(), command.durationSeconds());
 
-    return ChapterCreateResult.from(lecture.getId(), chapter.getId());
+    return ChapterCreateResult.from(lecture.getId(), chapterId);
   }
 }

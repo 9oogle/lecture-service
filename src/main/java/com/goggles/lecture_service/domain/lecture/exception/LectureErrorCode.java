@@ -24,6 +24,9 @@ public enum LectureErrorCode {
   CHAPTER_TITLE_REQUIRED("챕터 제목은 필수입니다."),
   CHAPTER_TITLE_TOO_LONG("챕터 제목은 200자 이하여야 합니다."),
   CHAPTER_DURATION_INVALID("영상 길이는 1 이상이어야 합니다."),
+  CHAPTER_LECTURE_REQUIRED("챕터의 강의 정보는 필수입니다."),
+  CHAPTER_CONTENT_REQUIRED("챕터 내용은 필수입니다."),
+  CHAPTER_DURATION_REQUIRED("챕터 영상 정보는 필수입니다."),
 
   // 가격
   PRICE_NEGATIVE("가격은 0원 이상이어야 합니다."),

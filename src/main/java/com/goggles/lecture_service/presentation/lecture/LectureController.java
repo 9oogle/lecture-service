@@ -61,8 +61,11 @@ public class LectureController {
   @PostMapping("/{lectureId}/chapters")
   @ResponseStatus(HttpStatus.CREATED)
   public ChapterCreateResponse createChapter(
+      @RequestHeader("X-User-Id") UUID userId,
+      @RequestHeader("X-User-Name") String userName,
       // TODO(#3 user-service 로그인 API 연동 후): instructorId 일치 검증
-      @PathVariable UUID lectureId, @Valid @RequestBody ChapterCreateRequest request) {
+      @PathVariable UUID lectureId,
+      @Valid @RequestBody ChapterCreateRequest request) {
     ChapterCreateResult result = lectureService.createChapter(request.toCommand(lectureId));
     return ChapterCreateResponse.from(result);
   }
