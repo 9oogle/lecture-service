@@ -19,6 +19,9 @@ public class LectureContent {
 
   public LectureContent(String title, String subtitle, String description) {
     if (title == null || title.isBlank()) throw new IllegalArgumentException("강의 제목은 필수입니다.");
+    if (title.length() > 200) throw new IllegalArgumentException("강의 제목은 200자 이하여야 합니다.");
+    if (subtitle != null && subtitle.length() > 300)
+      throw new IllegalArgumentException("강의 부제목은 300자 이하여야 합니다.");
     this.title = title;
     this.subtitle = subtitle;
     this.description = description;

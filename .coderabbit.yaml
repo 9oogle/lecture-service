@@ -11,6 +11,9 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+    base_branches:
+      - dev
+      - main
 
   path_filters:
     - "!**/generated/**"

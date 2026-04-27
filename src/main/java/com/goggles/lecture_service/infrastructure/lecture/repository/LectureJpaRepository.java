@@ -1,6 +1,7 @@
 package com.goggles.lecture_service.infrastructure.lecture.repository;
 
 import com.goggles.lecture_service.domain.lecture.Lecture;
+import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,4 +16,6 @@ public interface LectureJpaRepository extends JpaRepository<Lecture, UUID> {
   // soft delete 필터 우회를 위해 native query 사용
   @Query(value = "SELECT * FROM lecture.p_lecture WHERE id = :id", nativeQuery = true)
   Optional<Lecture> findByIdIncludeDeleted(@Param("id") UUID id);
+
+  Optional<Lecture> findByIdAndStatus(UUID id, LectureStatus status);
 }

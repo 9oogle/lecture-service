@@ -2,6 +2,8 @@ package com.goggles.lecture_service.application.lecture;
 
 import com.goggles.common.pagination.CommonPageRequest;
 import com.goggles.common.pagination.CommonPageResponse;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureDetail;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureSummary;
 import com.goggles.lecture_service.domain.lecture.LectureSearchCondition;
@@ -13,4 +15,6 @@ public interface LectureService {
       LectureSearchCondition condition, CommonPageRequest pageRequest);
 
   LectureDetail getLectureDetail(UUID lectureId);
+
+  LectureCreateResult createLecture(LectureCreateCommand command);
 }

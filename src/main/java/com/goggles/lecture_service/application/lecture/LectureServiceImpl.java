@@ -2,6 +2,9 @@ package com.goggles.lecture_service.application.lecture;
 
 import com.goggles.common.pagination.CommonPageRequest;
 import com.goggles.common.pagination.CommonPageResponse;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
+import com.goggles.lecture_service.application.lecture.command.service.LectureCommandService;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureDetail;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureSummary;
 import com.goggles.lecture_service.application.lecture.query.service.LectureQueryService;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class LectureServiceImpl implements LectureService {
 
   private final LectureQueryService lectureQueryService;
+  private final LectureCommandService lectureCommandService;
 
   @Override
   public CommonPageResponse<LectureSummary> getLectures(
@@ -25,5 +29,10 @@ public class LectureServiceImpl implements LectureService {
   @Override
   public LectureDetail getLectureDetail(UUID lectureId) {
     return lectureQueryService.getLectureDetail(lectureId);
+  }
+
+  @Override
+  public LectureCreateResult createLecture(LectureCreateCommand command) {
+    return lectureCommandService.createLecture(command);
   }
 }

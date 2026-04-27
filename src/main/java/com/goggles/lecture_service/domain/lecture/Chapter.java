@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -51,10 +52,10 @@ public class Chapter extends BaseAudit {
 
   private Chapter(
       Lecture lecture, ChapterContent content, int sortOrder, ChapterDuration duration) {
-    this.lecture = lecture;
-    this.content = content;
+    this.lecture = Objects.requireNonNull(lecture, "lecture는 필수입니다.");
+    this.content = Objects.requireNonNull(content, "content는 필수입니다.");
     this.sortOrder = sortOrder;
-    this.duration = duration;
+    this.duration = Objects.requireNonNull(duration, "duration은 필수입니다.");
   }
 
   public UUID getLectureId() {
@@ -62,7 +63,7 @@ public class Chapter extends BaseAudit {
   }
 
   void updateContent(ChapterContent newContent) {
-    this.content = newContent;
+    this.content = Objects.requireNonNull(newContent, "content는 필수입니다.");
   }
 
   void updateSortOrder(int newSortOrder) {
@@ -71,7 +72,7 @@ public class Chapter extends BaseAudit {
   }
 
   void updateDuration(ChapterDuration newDuration) {
-    this.duration = newDuration;
+    this.duration = Objects.requireNonNull(newDuration, "duration은 필수입니다.");
   }
 
   private static void validateSortOrder(int sortOrder) {

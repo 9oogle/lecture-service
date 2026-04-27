@@ -16,6 +16,7 @@ public class ChapterContent {
 
   public ChapterContent(String title, String content) {
     if (title == null || title.isBlank()) throw new IllegalArgumentException("챕터 제목은 필수입니다.");
+    if (title.length() > 200) throw new IllegalArgumentException("챕터 제목은 200자 이하여야 합니다.");
     this.title = title;
     this.content = content;
   }

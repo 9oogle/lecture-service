@@ -25,7 +25,6 @@ public class LectureQueryServiceImpl implements LectureQueryService {
 
   /*
    * TODO: common-library의 CommonPageResponse 에 map(Function) 메서드가 추가되면
-   *   아래 호출을 다음과 같이 리팩토링
    */
 
   @Override
@@ -38,17 +37,9 @@ public class LectureQueryServiceImpl implements LectureQueryService {
   public LectureDetail getLectureDetail(UUID lectureId) {
     Lecture lecture =
         lectureRepository
-            .findById(lectureId)
+            .findByIdAndStatus(lectureId, LectureStatus.PUBLISHED)
             .orElseThrow(() -> new LectureNotFoundException(lectureId));
 
-    validatePublished(lecture);
-
     return LectureDetail.from(lecture);
-  }
-
-  private void validatePublished(Lecture lecture) {
-    if (lecture.getStatus() != LectureStatus.PUBLISHED) {
-      throw new LectureNotFoundException(lecture.getId());
-    }
   }
 }
