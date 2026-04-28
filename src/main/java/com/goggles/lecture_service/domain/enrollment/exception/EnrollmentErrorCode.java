@@ -22,6 +22,7 @@ public enum EnrollmentErrorCode {
   // 강의 검증
   ENROLLMENT_LECTURE_NOT_PUBLISHED("판매 중인 강의가 아닙니다."),
   ENROLLMENT_LECTURE_DELETED("삭제된 강의입니다."),
+  ENROLLMENT_RESERVE_FAILED("수강 등록 예약에 실패했습니다."),
 
   // 필수 필드 - 스냅샷
   ENROLLMENT_LECTURE_SNAPSHOT_REQUIRED("강의 스냅샷은 필수입니다."),

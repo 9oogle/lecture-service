@@ -4,5 +4,4 @@ import java.util.List;
 import java.util.UUID;
 
 public record LectureEnrollmentReserveCommand(
-	List<UUID> productIds, UUID userId, String userName) {
-}
+    List<UUID> productIds, UUID userId, String userName) {}
