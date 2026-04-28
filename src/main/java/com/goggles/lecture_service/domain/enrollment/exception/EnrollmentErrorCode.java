@@ -35,7 +35,13 @@ public enum EnrollmentErrorCode {
   ENROLLMENT_STUDENT_ID_REQUIRED("학생 ID는 필수입니다."),
   ENROLLMENT_ORDER_ID_REQUIRED("주문 ID는 필수입니다."),
   ENROLLMENT_DURATION_POLICY_REQUIRED("수강 기간 정책은 필수입니다."),
-  ENROLLMENT_TIME_REQUIRED("시간 정보는 필수입니다.");
+  ENROLLMENT_TIME_REQUIRED("시간 정보는 필수입니다."),
+
+  // 요청 필드 검증
+  ENROLLMENT_PRODUCT_IDS_REQUIRED("상품 ID 목록은 필수입니다."),
+  ENROLLMENT_PRODUCT_IDS_EMPTY("상품 ID 목록은 비어 있을 수 없습니다."),
+  ENROLLMENT_USER_ID_REQUIRED("사용자 ID는 필수입니다."),
+  ENROLLMENT_USER_NAME_REQUIRED("사용자 이름은 필수입니다.");
 
   private final String message;
 }
