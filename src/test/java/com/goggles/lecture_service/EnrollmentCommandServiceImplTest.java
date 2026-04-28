@@ -10,6 +10,7 @@ import com.goggles.lecture_service.application.enrollment.command.service.Enroll
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
 import com.goggles.lecture_service.domain.enrollment.enums.ReserveFailReason;
 import com.goggles.lecture_service.domain.enrollment.exception.EnrollmentReserveFailedException;
+import com.goggles.lecture_service.domain.enrollment.exception.InvalidEnrollmentFieldException;
 import com.goggles.lecture_service.domain.enrollment.repository.EnrollmentRepository;
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
@@ -63,6 +64,59 @@ class EnrollmentCommandServiceImplTest {
       assertThat(results).hasSize(1);
       assertThat(results.get(0).productId()).isEqualTo(lecture.getId());
       verify(enrollmentRepository).save(any(Enrollment.class));
+    }
+
+    @Test
+    @DisplayName("성공: 다건 강의 예약")
+    void reserve_multiProduct_success() {
+      Lecture lecture1 = publishedLecture();
+      Lecture lecture2 = publishedLecture();
+      List<UUID> productIds = List.of(lecture1.getId(), lecture2.getId());
+
+      when(lectureRepository.findAllByIdIn(productIds)).thenReturn(List.of(lecture1, lecture2));
+      when(enrollmentRepository.existsActiveByStudentAndLecture(userId, lecture1.getId()))
+          .thenReturn(false);
+      when(enrollmentRepository.existsActiveByStudentAndLecture(userId, lecture2.getId()))
+          .thenReturn(false);
+      when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+      List<LectureEnrollmentReserveResult> results =
+          service.reserve(new LectureEnrollmentReserveCommand(productIds, userId, userName));
+
+      assertThat(results).hasSize(2);
+      assertThat(results)
+          .extracting(LectureEnrollmentReserveResult::productId)
+          .containsExactlyElementsOf(productIds);
+      verify(enrollmentRepository, times(2)).save(any(Enrollment.class));
+    }
+
+    @Test
+    @DisplayName("실패: productIds가 비어 있으면 예외")
+    void reserve_emptyProductIds_throws() {
+      assertThatThrownBy(() -> new LectureEnrollmentReserveCommand(List.of(), userId, userName))
+          .isInstanceOf(InvalidEnrollmentFieldException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 다건 중 일부 미출간이면 전체 예약 실패")
+    void reserve_partialNotPublished_allOrNothing() {
+      Lecture published = publishedLecture();
+      Lecture draft = draftLecture();
+      List<UUID> productIds = List.of(published.getId(), draft.getId());
+
+      when(lectureRepository.findAllByIdIn(productIds)).thenReturn(List.of(published, draft));
+      when(enrollmentRepository.existsActiveByStudentAndLecture(userId, published.getId()))
+          .thenReturn(false);
+
+      assertThatThrownBy(
+              () ->
+                  service.reserve(
+                      new LectureEnrollmentReserveCommand(productIds, userId, userName)))
+          .isInstanceOf(EnrollmentReserveFailedException.class)
+          .extracting("reason")
+          .isEqualTo(ReserveFailReason.NOT_PUBLISHED);
+
+      verify(enrollmentRepository, never()).save(any(Enrollment.class));
     }
 
     @Test

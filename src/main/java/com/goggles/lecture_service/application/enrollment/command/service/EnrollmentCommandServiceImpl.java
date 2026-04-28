@@ -33,11 +33,10 @@ public class EnrollmentCommandServiceImpl implements EnrollmentCommandService {
     Map<UUID, Lecture> lectureMap =
         lectures.stream().collect(Collectors.toMap(Lecture::getId, l -> l));
 
-    List<LectureEnrollmentReserveResult> results = new ArrayList<>();
-
-    // 2) productId 순서대로 검증,  Enrollment 생성
+    // 2) 전체 검증
     for (UUID productId : command.productIds()) {
       Lecture lecture = lectureMap.get(productId);
+
       if (lecture == null) {
         throw new EnrollmentReserveFailedException(productId, ReserveFailReason.LECTURE_NOT_FOUND);
       }
@@ -48,6 +47,12 @@ public class EnrollmentCommandServiceImpl implements EnrollmentCommandService {
         throw new EnrollmentReserveFailedException(
             productId, ReserveFailReason.DUPLICATE_ENROLLMENT);
       }
+    }
+    // 3) 검증 통과 후 Enrollment 저장
+    List<LectureEnrollmentReserveResult> results = new ArrayList<>();
+
+    for (UUID productId : command.productIds()) {
+      Lecture lecture = lectureMap.get(productId);
 
       LectureSnapshot snapshot =
           LectureSnapshot.of(
@@ -58,6 +63,7 @@ public class EnrollmentCommandServiceImpl implements EnrollmentCommandService {
 
       Enrollment enrollment =
           Enrollment.reserve(snapshot, command.userId(), lecture.getDurationPolicy());
+
       Enrollment saved = enrollmentRepository.save(enrollment);
 
       results.add(LectureEnrollmentReserveResult.of(saved, lecture));
