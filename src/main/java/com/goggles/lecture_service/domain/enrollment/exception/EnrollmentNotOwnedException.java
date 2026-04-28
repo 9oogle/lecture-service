@@ -4,7 +4,7 @@ import com.goggles.common.exception.BadRequestException;
 
 public class EnrollmentNotOwnedException extends BadRequestException {
 
-	public EnrollmentNotOwnedException(EnrollmentErrorCode errorCode) {
-		super(errorCode.getMessage());
-	}
+  public EnrollmentNotOwnedException(EnrollmentErrorCode errorCode) {
+    super(errorCode.getMessage());
+  }
 }
