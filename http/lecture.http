@@ -21,9 +21,9 @@ X-User-Name: {{instructorName}}
 > {%
     client.test("강의 생성 성공", function () {
         client.assert(response.status === 201, "응답 코드가 201이어야 합니다.");
-        client.assert(response.body.id !== null, "id가 반환되어야 합니다.");
-        client.assert(response.body.status === "DRAFT", "초기 상태는 DRAFT여야 합니다.");
-        client.global.set("createdLectureId", response.body.id);
+        client.assert(response.body.data.id !== null, "id가 반환되어야 합니다.");
+        client.assert(response.body.data.status === "DRAFT", "초기 상태는 DRAFT여야 합니다.");
+        client.global.set("createdLectureId", response.body.data.id);
     });
 %}
 
@@ -92,3 +92,63 @@ GET http://{{host}}/api/v1/lectures?page=0&size=10
 
 ### 7. 강의 상세 조회 (기존, 위에서 생성한 것 - DRAFT라 404 예상)
 GET http://{{host}}/api/v1/lectures/{{createdLectureId}}
+
+### 8. 챕터 생성 - 성공
+POST http://{{host}}/api/v1/lectures/{{createdLectureId}}/chapters
+Content-Type: application/json
+X-User-Id: {{instructorId}}
+X-User-Name: {{instructorName}}
+
+{
+  "title": "1강. 강의 소개",
+  "content": "스프링 부트 강의 소개 및 학습 목표를 설명합니다.",
+  "sortOrder": 1,
+  "durationSeconds": 600
+}
+
+> {%
+    client.test("챕터 생성 성공", function () {
+        client.assert(response.status === 201, "응답 코드가 201이어야 합니다.");
+        client.assert(response.body.data.lectureId !== null, "lectureId가 반환되어야 합니다.");
+        client.assert(response.body.data.chapterId !== null, "chapterId가 반환되어야 합니다.");
+    });
+%}
+
+### 9. 챕터 생성 - 실패 (존재하지 않는 강의)
+POST http://{{host}}/api/v1/lectures/00000000-0000-0000-0000-000000000000/chapters
+Content-Type: application/json
+X-User-Id: {{instructorId}}
+X-User-Name: {{instructorName}}
+
+{
+  "title": "1강. 강의 소개",
+  "content": "스프링 부트 강의 소개",
+  "sortOrder": 1,
+  "durationSeconds": 600
+}
+
+### 10. 챕터 생성 - 실패 (필수값 누락)
+POST http://{{host}}/api/v1/lectures/{{createdLectureId}}/chapters
+Content-Type: application/json
+X-User-Id: {{instructorId}}
+X-User-Name: {{instructorName}}
+
+{
+  "title": "",
+  "content": "내용",
+  "sortOrder": 1,
+  "durationSeconds": 600
+}
+
+### 11. 챕터 생성 - 실패 (정렬 순서 중복)
+POST http://{{host}}/api/v1/lectures/{{createdLectureId}}/chapters
+Content-Type: application/json
+X-User-Id: {{instructorId}}
+X-User-Name: {{instructorName}}
+
+{
+  "title": "1강. 중복 챕터",
+  "content": "sortOrder가 중복되는 챕터입니다.",
+  "sortOrder": 1,
+  "durationSeconds": 300
+}

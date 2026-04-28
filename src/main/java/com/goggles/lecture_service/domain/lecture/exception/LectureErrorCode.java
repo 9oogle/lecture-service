@@ -13,11 +13,28 @@ public enum LectureErrorCode {
   LECTURE_CHAPTER_REQUIRED("챕터가 최소 1개 이상 있어야 합니다."),
   LECTURE_CATEGORY_REQUIRED("카테고리는 필수입니다."),
   LECTURE_REJECTION_REASON_REQUIRED("반려 사유는 필수입니다."),
+  LECTURE_TITLE_REQUIRED("강의 제목은 필수입니다."),
+  LECTURE_TITLE_TOO_LONG("강의 제목은 200자 이하여야 합니다."),
+  LECTURE_SUBTITLE_TOO_LONG("강의 부제목은 300자 이하여야 합니다."),
 
   // 챕터
   CHAPTER_NOT_FOUND("해당 챕터를 찾을 수 없습니다."),
   CHAPTER_DUPLICATE_SORT_ORDER("이미 존재하는 챕터 순서입니다."),
-  INVALID_SORT_ORDER("챕터 순서는 1 이상이어야 합니다.");
+  CHAPTER_INVALID_SORT_ORDER("챕터 순서는 1 이상이어야 합니다."),
+  CHAPTER_TITLE_REQUIRED("챕터 제목은 필수입니다."),
+  CHAPTER_TITLE_TOO_LONG("챕터 제목은 200자 이하여야 합니다."),
+  CHAPTER_DURATION_INVALID("영상 길이는 1 이상이어야 합니다."),
+  CHAPTER_LECTURE_REQUIRED("챕터의 강의 정보는 필수입니다."),
+  CHAPTER_CONTENT_REQUIRED("챕터 내용은 필수입니다."),
+  CHAPTER_DURATION_REQUIRED("챕터 영상 정보는 필수입니다."),
+
+  // 가격
+  PRICE_NEGATIVE("가격은 0원 이상이어야 합니다."),
+
+  // 강사
+  INSTRUCTOR_ID_REQUIRED("강사 ID는 필수입니다."),
+  INSTRUCTOR_NAME_REQUIRED("강사 이름은 필수입니다."),
+  INSTRUCTOR_NAME_TOO_LONG("강사 이름은 100자 이하여야 합니다.");
 
   private final String message;
 }

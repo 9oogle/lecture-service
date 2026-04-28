@@ -1,7 +1,9 @@
 package com.goggles.lecture_service.domain.lecture;
 
 import com.goggles.common.domain.BaseAudit;
+import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureFieldException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidSortOrderException;
+import com.goggles.lecture_service.domain.lecture.exception.LectureErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -11,7 +13,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -52,10 +53,16 @@ public class Chapter extends BaseAudit {
 
   private Chapter(
       Lecture lecture, ChapterContent content, int sortOrder, ChapterDuration duration) {
-    this.lecture = Objects.requireNonNull(lecture, "lecture는 필수입니다.");
-    this.content = Objects.requireNonNull(content, "content는 필수입니다.");
+    if (lecture == null)
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_LECTURE_REQUIRED);
+    if (content == null)
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_CONTENT_REQUIRED);
+    if (duration == null)
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_DURATION_REQUIRED);
+    this.lecture = lecture;
+    this.content = content;
     this.sortOrder = sortOrder;
-    this.duration = Objects.requireNonNull(duration, "duration은 필수입니다.");
+    this.duration = duration;
   }
 
   public UUID getLectureId() {
@@ -63,7 +70,9 @@ public class Chapter extends BaseAudit {
   }
 
   void updateContent(ChapterContent newContent) {
-    this.content = Objects.requireNonNull(newContent, "content는 필수입니다.");
+    if (newContent == null)
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_CONTENT_REQUIRED);
+    this.content = newContent;
   }
 
   void updateSortOrder(int newSortOrder) {
@@ -72,7 +81,9 @@ public class Chapter extends BaseAudit {
   }
 
   void updateDuration(ChapterDuration newDuration) {
-    this.duration = Objects.requireNonNull(newDuration, "duration은 필수입니다.");
+    if (newDuration == null)
+      throw new InvalidLectureFieldException(LectureErrorCode.CHAPTER_DURATION_REQUIRED);
+    this.duration = newDuration;
   }
 
   private static void validateSortOrder(int sortOrder) {

@@ -4,14 +4,21 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.service.LectureCommandServiceImpl;
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
 import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
+import com.goggles.lecture_service.domain.lecture.exception.DuplicateSortOrderException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidCategoryException;
+import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureFieldException;
+import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureStatusException;
+import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -114,7 +121,7 @@ class LectureCommandServiceImplTest {
 
       // when & then
       assertThatThrownBy(() -> lectureCommandService.createLecture(invalidCommand))
-          .isInstanceOf(IllegalArgumentException.class);
+          .isInstanceOf(InvalidLectureFieldException.class);
       verify(lectureRepository, times(0)).save(any(Lecture.class));
     }
 
@@ -128,8 +135,105 @@ class LectureCommandServiceImplTest {
 
       // when & then
       assertThatThrownBy(() -> lectureCommandService.createLecture(invalidCommand))
-          .isInstanceOf(IllegalArgumentException.class);
+          .isInstanceOf(InvalidLectureFieldException.class);
       verify(lectureRepository, times(0)).save(any(Lecture.class));
+    }
+  }
+
+  @Nested
+  @DisplayName("챕터 생성")
+  class CreateChapter {
+
+    private UUID lectureId;
+    private Lecture lecture;
+
+    @BeforeEach
+    void setUp() {
+      lecture =
+          Lecture.create(
+              instructorId, "강사이름", "IT", "자바 강의", "부제", "설명", DurationPolicy.DAYS_365, 50000L);
+
+      lectureId = lecture.getId();
+    }
+
+    @Test
+    @DisplayName("성공: DRAFT 강의에 챕터를 추가한다")
+    void createChapter_success() {
+      // given
+      ChapterCreateCommand chapterCommand =
+          new ChapterCreateCommand(lectureId, "1강", "자바 소개", 1, 600);
+
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
+
+      // when
+      ChapterCreateResult result = lectureCommandService.createChapter(chapterCommand);
+
+      // then
+      assertThat(result).isNotNull();
+      assertThat(result.lectureId()).isEqualTo(lectureId);
+      assertThat(result.chapterId()).isNotNull();
+
+      verify(lectureRepository).findById(lectureId);
+    }
+
+    @Test
+    @DisplayName("실패: 존재하지 않는 강의이면 예외 발생")
+    void createChapter_lectureNotFound_throws() {
+      // given
+      UUID notFoundId = UUID.randomUUID();
+      ChapterCreateCommand chapterCommand =
+          new ChapterCreateCommand(notFoundId, "1강", "자바 소개", 1, 600);
+
+      when(lectureRepository.findById(notFoundId)).thenReturn(Optional.empty());
+
+      // when & then
+      assertThatThrownBy(() -> lectureCommandService.createChapter(chapterCommand))
+          .isInstanceOf(LectureNotFoundException.class);
+
+      verify(lectureRepository).findById(notFoundId);
+      verify(lectureRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("실패: DRAFT 상태가 아닌 강의에 챕터 추가 시 예외 발생")
+    void createChapter_notDraftStatus_throws() {
+      // given - PENDING_REVIEW 상태로 만들기 위해 챕터 1개 추가 후 submitForReview
+      lecture.addChapter("dummy", "dummy", 1, 600);
+      lecture.submitForReview();
+
+      ChapterCreateCommand chapterCommand = new ChapterCreateCommand(lectureId, "2강", "내용", 2, 600);
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
+
+      // when & then
+      assertThatThrownBy(() -> lectureCommandService.createChapter(chapterCommand))
+          .isInstanceOf(InvalidLectureStatusException.class);
+    }
+
+    @Test
+    @DisplayName("실패: sortOrder 가 중복되면 예외 발생")
+    void createChapter_duplicateSortOrder_throws() {
+      // given - 이미 sortOrder=1인 챕터 추가
+      lecture.addChapter("1강", "내용", 1, 600);
+
+      ChapterCreateCommand chapterCommand =
+          new ChapterCreateCommand(lectureId, "다른강", "내용", 1, 600);
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
+
+      // when & then
+      assertThatThrownBy(() -> lectureCommandService.createChapter(chapterCommand))
+          .isInstanceOf(DuplicateSortOrderException.class);
+    }
+
+    @Test
+    @DisplayName("실패: durationSeconds = 0 이면 예외 발생 (정책 강화)")
+    void createChapter_zeroDuration_throws() {
+      // given
+      ChapterCreateCommand chapterCommand = new ChapterCreateCommand(lectureId, "1강", "내용", 1, 0);
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
+
+      // when & then
+      assertThatThrownBy(() -> lectureCommandService.createChapter(chapterCommand))
+          .isInstanceOf(InvalidLectureFieldException.class);
     }
   }
 }

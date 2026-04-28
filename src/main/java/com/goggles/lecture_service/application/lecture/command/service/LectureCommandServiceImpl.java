@@ -1,9 +1,13 @@
 package com.goggles.lecture_service.application.lecture.command.service;
 
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.domain.lecture.Lecture;
+import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,5 +35,20 @@ public class LectureCommandServiceImpl implements LectureCommandService {
 
     Lecture saved = lectureRepository.save(lecture);
     return LectureCreateResult.from(saved);
+  }
+
+  @Override
+  @Transactional
+  public ChapterCreateResult createChapter(ChapterCreateCommand command) {
+    Lecture lecture =
+        lectureRepository
+            .findById(command.lectureId())
+            .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
+
+    UUID chapterId =
+        lecture.addChapter(
+            command.title(), command.content(), command.sortOrder(), command.durationSeconds());
+
+    return ChapterCreateResult.from(lecture.getId(), chapterId);
   }
 }
