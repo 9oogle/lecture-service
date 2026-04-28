@@ -1,6 +1,7 @@
 package com.goggles.lecture_service.presentation.enrollment.internal;
 
 import com.goggles.lecture_service.application.enrollment.command.service.EnrollmentCommandService;
+import com.goggles.lecture_service.presentation.enrollment.internal.dto.LectureEnrollmentCancelRequest;
 import com.goggles.lecture_service.presentation.enrollment.internal.dto.LectureEnrollmentReserveRequest;
 import com.goggles.lecture_service.presentation.enrollment.internal.dto.LectureEnrollmentReserveResponse;
 import jakarta.validation.Valid;
@@ -27,5 +28,11 @@ public class InternalLectureEnrollmentController {
     return enrollmentCommandService.reserve(request.toCommand()).stream()
         .map(LectureEnrollmentReserveResponse::from)
         .toList();
+  }
+
+  @PostMapping("/cancellation")
+  @ResponseStatus(HttpStatus.OK)
+  public void cancel(@Valid @RequestBody LectureEnrollmentCancelRequest request) {
+    enrollmentCommandService.cancel(request.toCommand());
   }
 }
