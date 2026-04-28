@@ -1,9 +1,12 @@
 package com.goggles.lecture_service.infrastructure.enrollment.repository;
 
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
+import com.goggles.lecture_service.domain.enrollment.enums.EnrollmentStatus;
 import com.goggles.lecture_service.domain.enrollment.repository.EnrollmentRepository;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -11,6 +14,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 @RequiredArgsConstructor
 public class EnrollmentRepositoryImpl implements EnrollmentRepository {
+
+  private static final Set<EnrollmentStatus> ACTIVE_OR_RESERVED =
+      EnumSet.of(EnrollmentStatus.RESERVE, EnrollmentStatus.ACTIVE);
 
   private final EnrollmentJpaRepository jpaRepository;
 
@@ -31,7 +37,8 @@ public class EnrollmentRepositoryImpl implements EnrollmentRepository {
 
   @Override
   public boolean existsActiveByStudentAndLecture(UUID studentId, UUID lectureId) {
-    return jpaRepository.existsActiveByStudentAndLecture(studentId, lectureId);
+    return jpaRepository.existsByStudentAndLectureAndStatusIn(
+        studentId, lectureId, ACTIVE_OR_RESERVED);
   }
 
   @Override
@@ -41,6 +48,6 @@ public class EnrollmentRepositoryImpl implements EnrollmentRepository {
 
   @Override
   public List<Enrollment> findActiveByStudentId(UUID studentId) {
-    return jpaRepository.findActiveByStudentId(studentId);
+    return jpaRepository.findByStudentIdAndStatus(studentId, EnrollmentStatus.ACTIVE);
   }
 }

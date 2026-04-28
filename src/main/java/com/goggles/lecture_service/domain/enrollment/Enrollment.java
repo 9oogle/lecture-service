@@ -12,6 +12,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -23,7 +24,10 @@ import org.hibernate.annotations.SQLRestriction;
 @Entity
 @Table(
     name = "p_enrollment",
-    uniqueConstraints = {})
+    indexes = {
+      @Index(name = "idx_enrollment_student_status", columnList = "student_id, status"),
+      @Index(name = "idx_enrollment_order_id", columnList = "order_id")
+    })
 @SQLRestriction("deleted_at IS NULL")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -83,6 +87,7 @@ public class Enrollment extends BaseAudit {
 
   // 도메인 메서드 (상태 전이) — 기존과 동일
   public void activate(LocalDateTime now) {
+    validateNow(now);
     if (this.status != EnrollmentStatus.RESERVE) {
       throw new InvalidEnrollmentStatusException(
           EnrollmentErrorCode.ENROLLMENT_INVALID_STATUS_FOR_ACTIVATE);
@@ -110,6 +115,7 @@ public class Enrollment extends BaseAudit {
 
   /** 사용자가 강의에 접근할 때 호출 (마지막 수강 시각 갱신) */
   public void touchLastAccessed(LocalDateTime now) {
+    validateNow(now);
     if (this.status != EnrollmentStatus.ACTIVE) {
       throw new InvalidEnrollmentStatusException(
           EnrollmentErrorCode.ENROLLMENT_INVALID_STATUS_FOR_ACCESS);
@@ -124,6 +130,7 @@ public class Enrollment extends BaseAudit {
   }
 
   public boolean isExpired(LocalDateTime now) {
+    validateNow(now);
     return this.expiresAt != null && now.isAfter(this.expiresAt);
   }
 
@@ -152,6 +159,12 @@ public class Enrollment extends BaseAudit {
     if (durationPolicy == null)
       throw new InvalidEnrollmentFieldException(
           EnrollmentErrorCode.ENROLLMENT_DURATION_POLICY_REQUIRED);
+  }
+
+  private static void validateNow(LocalDateTime now) {
+    if (now == null) {
+      throw new InvalidEnrollmentFieldException(EnrollmentErrorCode.ENROLLMENT_TIME_REQUIRED);
+    }
   }
 
   private static LocalDateTime calculateExpiresAt(LocalDateTime from, DurationPolicy policy) {
