@@ -4,13 +4,19 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentCancelCommand;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentReserveCommand;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentReserveResult;
 import com.goggles.lecture_service.application.enrollment.command.service.EnrollmentCommandServiceImpl;
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
+import com.goggles.lecture_service.domain.enrollment.LectureSnapshot;
+import com.goggles.lecture_service.domain.enrollment.enums.EnrollmentStatus;
 import com.goggles.lecture_service.domain.enrollment.enums.ReserveFailReason;
+import com.goggles.lecture_service.domain.enrollment.exception.EnrollmentNotFoundException;
+import com.goggles.lecture_service.domain.enrollment.exception.EnrollmentNotOwnedException;
 import com.goggles.lecture_service.domain.enrollment.exception.EnrollmentReserveFailedException;
 import com.goggles.lecture_service.domain.enrollment.exception.InvalidEnrollmentFieldException;
+import com.goggles.lecture_service.domain.enrollment.exception.InvalidEnrollmentStatusException;
 import com.goggles.lecture_service.domain.enrollment.repository.EnrollmentRepository;
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
@@ -58,8 +64,7 @@ class EnrollmentCommandServiceImplTest {
       when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
 
       List<LectureEnrollmentReserveResult> results =
-          service.reserve(
-              new LectureEnrollmentReserveCommand(List.of(lecture.getId()), userId, userName));
+          service.reserve(new LectureEnrollmentReserveCommand(List.of(lecture.getId()), userId));
 
       assertThat(results).hasSize(1);
       assertThat(results.get(0).productId()).isEqualTo(lecture.getId());
@@ -81,7 +86,7 @@ class EnrollmentCommandServiceImplTest {
       when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
 
       List<LectureEnrollmentReserveResult> results =
-          service.reserve(new LectureEnrollmentReserveCommand(productIds, userId, userName));
+          service.reserve(new LectureEnrollmentReserveCommand(productIds, userId));
 
       assertThat(results).hasSize(2);
       assertThat(results)
@@ -93,7 +98,7 @@ class EnrollmentCommandServiceImplTest {
     @Test
     @DisplayName("실패: productIds가 비어 있으면 예외")
     void reserve_emptyProductIds_throws() {
-      assertThatThrownBy(() -> new LectureEnrollmentReserveCommand(List.of(), userId, userName))
+      assertThatThrownBy(() -> new LectureEnrollmentReserveCommand(List.of(), userId))
           .isInstanceOf(InvalidEnrollmentFieldException.class);
     }
 
@@ -109,9 +114,7 @@ class EnrollmentCommandServiceImplTest {
           .thenReturn(false);
 
       assertThatThrownBy(
-              () ->
-                  service.reserve(
-                      new LectureEnrollmentReserveCommand(productIds, userId, userName)))
+              () -> service.reserve(new LectureEnrollmentReserveCommand(productIds, userId)))
           .isInstanceOf(EnrollmentReserveFailedException.class)
           .extracting("reason")
           .isEqualTo(ReserveFailReason.NOT_PUBLISHED);
@@ -126,9 +129,7 @@ class EnrollmentCommandServiceImplTest {
       when(lectureRepository.findAllByIdIn(List.of(missing))).thenReturn(List.of());
 
       assertThatThrownBy(
-              () ->
-                  service.reserve(
-                      new LectureEnrollmentReserveCommand(List.of(missing), userId, userName)))
+              () -> service.reserve(new LectureEnrollmentReserveCommand(List.of(missing), userId)))
           .isInstanceOf(EnrollmentReserveFailedException.class)
           .extracting("reason")
           .isEqualTo(ReserveFailReason.LECTURE_NOT_FOUND);
@@ -143,8 +144,7 @@ class EnrollmentCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   service.reserve(
-                      new LectureEnrollmentReserveCommand(
-                          List.of(draft.getId()), userId, userName)))
+                      new LectureEnrollmentReserveCommand(List.of(draft.getId()), userId)))
           .isInstanceOf(EnrollmentReserveFailedException.class)
           .extracting("reason")
           .isEqualTo(ReserveFailReason.NOT_PUBLISHED);
@@ -161,11 +161,29 @@ class EnrollmentCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   service.reserve(
-                      new LectureEnrollmentReserveCommand(
-                          List.of(lecture.getId()), userId, userName)))
+                      new LectureEnrollmentReserveCommand(List.of(lecture.getId()), userId)))
           .isInstanceOf(EnrollmentReserveFailedException.class)
           .extracting("reason")
           .isEqualTo(ReserveFailReason.DUPLICATE_ENROLLMENT);
+    }
+
+    @Test
+    @DisplayName("실패: 강의 일부만 조회되면 전체 실패")
+    void reserve_partialLectureMissing_throws() {
+      Lecture lecture = publishedLecture();
+      UUID missing = UUID.randomUUID();
+
+      List<UUID> productIds = List.of(lecture.getId(), missing);
+
+      when(lectureRepository.findAllByIdIn(productIds)).thenReturn(List.of(lecture)); // 일부만 반환
+
+      assertThatThrownBy(
+              () -> service.reserve(new LectureEnrollmentReserveCommand(productIds, userId)))
+          .isInstanceOf(EnrollmentReserveFailedException.class)
+          .extracting("reason")
+          .isEqualTo(ReserveFailReason.LECTURE_NOT_FOUND);
+
+      verify(enrollmentRepository, never()).save(any());
     }
   }
 
@@ -191,5 +209,86 @@ class EnrollmentCommandServiceImplTest {
   private Lecture draftLecture() {
     return Lecture.create(
         UUID.randomUUID(), "강사명", "BACKEND", "스프링 강의", "부제", "설명", DurationPolicy.DAYS_365, 10000L);
+  }
+
+  @Nested
+  @DisplayName("수강 등록 예약 취소")
+  class Cancel {
+
+    @Test
+    @DisplayName("성공: 단건 취소")
+    void cancel_singleEnrollment_success() {
+      Enrollment enrollment = reservedEnrollment(userId);
+      UUID enrollmentId = enrollment.getId();
+      when(enrollmentRepository.findAllByIdIn(List.of(enrollmentId)))
+          .thenReturn(List.of(enrollment));
+
+      service.cancel(new LectureEnrollmentCancelCommand(List.of(enrollmentId), userId));
+
+      assertThat(enrollment.getStatus()).isEqualTo(EnrollmentStatus.CANCELED);
+    }
+
+    @Test
+    @DisplayName("성공: 다건 취소")
+    void cancel_multiple_success() {
+      Enrollment a = reservedEnrollment(userId);
+      Enrollment b = reservedEnrollment(userId);
+      when(enrollmentRepository.findAllByIdIn(List.of(a.getId(), b.getId())))
+          .thenReturn(List.of(a, b));
+
+      service.cancel(new LectureEnrollmentCancelCommand(List.of(a.getId(), b.getId()), userId));
+
+      assertThat(a.getStatus()).isEqualTo(EnrollmentStatus.CANCELED);
+      assertThat(b.getStatus()).isEqualTo(EnrollmentStatus.CANCELED);
+    }
+
+    @Test
+    @DisplayName("실패: 일부 enrollmentId 미존재")
+    void cancel_someNotFound_throws() {
+      UUID missing = UUID.randomUUID();
+      when(enrollmentRepository.findAllByIdIn(List.of(missing))).thenReturn(List.of());
+
+      assertThatThrownBy(
+              () -> service.cancel(new LectureEnrollmentCancelCommand(List.of(missing), userId)))
+          .isInstanceOf(EnrollmentNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 다른 학생 소유 enrollment 취소 시도")
+    void cancel_notOwned_throws() {
+      UUID otherUser = UUID.randomUUID();
+      Enrollment otherUserEnrollment = reservedEnrollment(otherUser);
+      when(enrollmentRepository.findAllByIdIn(List.of(otherUserEnrollment.getId())))
+          .thenReturn(List.of(otherUserEnrollment));
+
+      assertThatThrownBy(
+              () ->
+                  service.cancel(
+                      new LectureEnrollmentCancelCommand(
+                          List.of(otherUserEnrollment.getId()), userId)))
+          .isInstanceOf(EnrollmentNotOwnedException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 이미 CANCELED 상태 — 도메인 예외")
+    void cancel_alreadyCanceled_throws() {
+      Enrollment enrollment = reservedEnrollment(userId);
+      enrollment.cancel(); // 이미 CANCELED 로 만들어둠
+      when(enrollmentRepository.findAllByIdIn(List.of(enrollment.getId())))
+          .thenReturn(List.of(enrollment));
+
+      assertThatThrownBy(
+              () ->
+                  service.cancel(
+                      new LectureEnrollmentCancelCommand(List.of(enrollment.getId()), userId)))
+          .isInstanceOf(InvalidEnrollmentStatusException.class);
+    }
+
+    // 헬퍼
+    private Enrollment reservedEnrollment(UUID studentId) {
+      LectureSnapshot snapshot =
+          LectureSnapshot.of(UUID.randomUUID(), "스프링 강의", UUID.randomUUID(), "홍길동");
+      return Enrollment.reserve(snapshot, studentId, DurationPolicy.DAYS_365);
+    }
   }
 }

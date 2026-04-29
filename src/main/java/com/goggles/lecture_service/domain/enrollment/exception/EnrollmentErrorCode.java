@@ -23,6 +23,7 @@ public enum EnrollmentErrorCode {
   ENROLLMENT_LECTURE_NOT_PUBLISHED("판매 중인 강의가 아닙니다."),
   ENROLLMENT_LECTURE_DELETED("삭제된 강의입니다."),
   ENROLLMENT_RESERVE_FAILED("수강 등록 예약에 실패했습니다."),
+  ENROLLMENT_NOT_OWNED("본인 소유의 수강 정보가 아닙니다."),
 
   // 필수 필드 - 스냅샷
   ENROLLMENT_LECTURE_SNAPSHOT_REQUIRED("강의 스냅샷은 필수입니다."),
@@ -38,6 +39,10 @@ public enum EnrollmentErrorCode {
   ENROLLMENT_TIME_REQUIRED("시간 정보는 필수입니다."),
 
   // 요청 필드 검증
+  ENROLLMENT_IDS_REQUIRED("수강 ID 목록은 필수입니다."),
+  ENROLLMENT_IDS_EMPTY("수강 ID 목록은 비어 있을 수 없습니다."),
+  ENROLLMENT_ID_REQUIRED("수강 ID는 필수입니다."),
+  ENROLLMENT_IDS_DUPLICATED("수강 ID 목록에 중복 값이 있을 수 없습니다."),
   ENROLLMENT_PRODUCT_IDS_REQUIRED("상품 ID 목록은 필수입니다."),
   ENROLLMENT_PRODUCT_IDS_EMPTY("상품 ID 목록은 비어 있을 수 없습니다."),
   ENROLLMENT_USER_ID_REQUIRED("사용자 ID는 필수입니다."),

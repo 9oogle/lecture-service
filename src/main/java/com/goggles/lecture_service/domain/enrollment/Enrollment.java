@@ -65,9 +65,23 @@ public class Enrollment extends BaseAudit {
 
   // 정적 팩토리 메서드: RESERVE 로 생성
   public static Enrollment reserve(
-      LectureSnapshot lectureSnapshot, UUID studentId, DurationPolicy durationPolicy) {
-    validateRequired(lectureSnapshot, studentId, durationPolicy);
-    return new Enrollment(lectureSnapshot, studentId, durationPolicy);
+      LectureSnapshot snapshot, UUID studentId, DurationPolicy durationPolicy) {
+
+    if (snapshot == null) {
+      throw new InvalidEnrollmentFieldException(
+          EnrollmentErrorCode.ENROLLMENT_LECTURE_SNAPSHOT_REQUIRED);
+    }
+
+    if (studentId == null) {
+      throw new InvalidEnrollmentFieldException(EnrollmentErrorCode.ENROLLMENT_STUDENT_ID_REQUIRED);
+    }
+
+    if (durationPolicy == null) {
+      throw new InvalidEnrollmentFieldException(
+          EnrollmentErrorCode.ENROLLMENT_DURATION_POLICY_REQUIRED);
+    }
+
+    return new Enrollment(snapshot, studentId, durationPolicy);
   }
 
   private Enrollment(
@@ -119,7 +133,6 @@ public class Enrollment extends BaseAudit {
   }
 
   // 편의 메서드
-
   public boolean isActive() {
     return this.status == EnrollmentStatus.ACTIVE;
   }

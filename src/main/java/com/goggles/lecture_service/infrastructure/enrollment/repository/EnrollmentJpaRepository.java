@@ -35,4 +35,6 @@ public interface EnrollmentJpaRepository extends JpaRepository<Enrollment, UUID>
       "select e from Enrollment e " + "where e.studentId = :studentId " + "and e.status = :status")
   List<Enrollment> findByStudentIdAndStatus(
       @Param("studentId") UUID studentId, @Param("status") EnrollmentStatus status);
+
+  List<Enrollment> findAllByIdIn(List<UUID> ids);
 }

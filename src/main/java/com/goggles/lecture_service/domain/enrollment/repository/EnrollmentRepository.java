@@ -11,6 +11,8 @@ public interface EnrollmentRepository {
 
   Optional<Enrollment> findById(UUID id);
 
+  List<Enrollment> findAllByIdIn(List<UUID> ids);
+
   Optional<Enrollment> findByOrderIdAndLectureId(UUID orderId, UUID lectureId);
 
   // 동일 학생 + 동일 강의에 RESERVE/ACTIVE 인 enrollment 존재 여부. 중복 수강 검증용

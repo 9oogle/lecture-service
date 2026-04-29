@@ -31,6 +31,11 @@ public class EnrollmentRepositoryImpl implements EnrollmentRepository {
   }
 
   @Override
+  public List<Enrollment> findAllByIdIn(List<UUID> ids) {
+    return jpaRepository.findAllByIdIn(ids);
+  }
+
+  @Override
   public Optional<Enrollment> findByOrderIdAndLectureId(UUID orderId, UUID lectureId) {
     return jpaRepository.findByOrderIdAndLectureId(orderId, lectureId);
   }
