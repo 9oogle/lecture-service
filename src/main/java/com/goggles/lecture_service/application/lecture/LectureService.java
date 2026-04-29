@@ -4,6 +4,12 @@ import com.goggles.common.pagination.CommonPageRequest;
 import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterDeleteCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
@@ -29,4 +35,10 @@ public interface LectureService {
   LectureUpdateResult updateLecture(LectureUpdateCommand command);
 
   LectureDeleteResult deleteLecture(LectureDeleteCommand command);
+
+  ChapterUpdateResult updateChapter(ChapterUpdateCommand command);
+
+  ChapterDeleteResult deleteChapter(ChapterDeleteCommand command);
+
+  ChapterReorderResult reorderChapters(ChapterReorderCommand command);
 }

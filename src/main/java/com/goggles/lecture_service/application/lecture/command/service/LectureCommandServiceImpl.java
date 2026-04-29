@@ -2,6 +2,12 @@ package com.goggles.lecture_service.application.lecture.command.service;
 
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterDeleteCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
@@ -12,7 +18,9 @@ import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.exception.LectureAccessDeniedException;
 import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,6 +98,56 @@ public class LectureCommandServiceImpl implements LectureCommandService {
     lecture.delete(command.actorId());
 
     return LectureDeleteResult.from(command.lectureId());
+  }
+
+  @Override
+  public ChapterUpdateResult updateChapter(ChapterUpdateCommand command) {
+    Lecture lecture =
+        lectureRepository
+            .findById(command.lectureId())
+            .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
+
+    validateLectureAccess(lecture, command.actorId(), command.actorRole());
+
+    lecture.updateChapter(
+        command.chapterId(), command.title(), command.content(), command.durationSeconds());
+
+    return ChapterUpdateResult.from(lecture.getId(), command.chapterId());
+  }
+
+  @Override
+  public ChapterDeleteResult deleteChapter(ChapterDeleteCommand command) {
+    Lecture lecture =
+        lectureRepository
+            .findById(command.lectureId())
+            .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
+
+    validateLectureAccess(lecture, command.actorId(), command.actorRole());
+
+    lecture.removeChapter(command.chapterId());
+
+    return ChapterDeleteResult.from(command.lectureId(), command.chapterId());
+  }
+
+  @Override
+  public ChapterReorderResult reorderChapters(ChapterReorderCommand command) {
+    Lecture lecture =
+        lectureRepository
+            .findById(command.lectureId())
+            .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
+
+    validateLectureAccess(lecture, command.actorId(), command.actorRole());
+
+    Map<UUID, Integer> chapterOrders =
+        command.orders().stream()
+            .collect(
+                Collectors.toMap(
+                    ChapterReorderCommand.ChapterOrderCommand::chapterId,
+                    ChapterReorderCommand.ChapterOrderCommand::sortOrder));
+
+    lecture.reorderChapters(chapterOrders);
+
+    return ChapterReorderResult.from(command.lectureId());
   }
 
   // 강의 소유자(강사) 또는 관리자(MASTER)만 통과

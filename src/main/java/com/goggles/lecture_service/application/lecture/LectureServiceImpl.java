@@ -4,6 +4,12 @@ import com.goggles.common.pagination.CommonPageRequest;
 import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterDeleteCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
@@ -55,5 +61,20 @@ public class LectureServiceImpl implements LectureService {
   @Override
   public LectureDeleteResult deleteLecture(LectureDeleteCommand command) {
     return lectureCommandService.deleteLecture(command);
+  }
+
+  @Override
+  public ChapterUpdateResult updateChapter(ChapterUpdateCommand command) {
+    return lectureCommandService.updateChapter(command);
+  }
+
+  @Override
+  public ChapterDeleteResult deleteChapter(ChapterDeleteCommand command) {
+    return lectureCommandService.deleteChapter(command);
+  }
+
+  @Override
+  public ChapterReorderResult reorderChapters(ChapterReorderCommand command) {
+    return lectureCommandService.reorderChapters(command);
   }
 }
