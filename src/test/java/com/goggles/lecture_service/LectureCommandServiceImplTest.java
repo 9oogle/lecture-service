@@ -6,6 +6,12 @@ import static org.mockito.Mockito.*;
 
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterDeleteCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
@@ -16,6 +22,7 @@ import com.goggles.lecture_service.application.lecture.command.service.LectureCo
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
 import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
+import com.goggles.lecture_service.domain.lecture.exception.ChapterNotFoundException;
 import com.goggles.lecture_service.domain.lecture.exception.DuplicateSortOrderException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidCategoryException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureFieldException;
@@ -23,6 +30,7 @@ import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureStatus
 import com.goggles.lecture_service.domain.lecture.exception.LectureAccessDeniedException;
 import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -478,6 +486,449 @@ class LectureCommandServiceImplTest {
     }
   }
 
+  @Nested
+  @DisplayName("챕터 수정")
+  class UpdateChapter {
+
+    @Test
+    @DisplayName("성공: 강의 소유자가 DRAFT 상태 강의의 챕터를 수정한다")
+    void updateChapter_byOwner_success() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLectureWithChapters(instructorId, 1);
+      UUID chapterId = lecture.getChapterViews().get(0).id();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      ChapterUpdateResult result =
+          lectureCommandService.updateChapter(
+              new ChapterUpdateCommand(
+                  lecture.getId(), chapterId, instructorId, "INSTRUCTOR", "수정된 챕터", "수정된 내용", 900));
+
+      assertThat(result.lectureId()).isEqualTo(lecture.getId());
+      assertThat(result.chapterId()).isEqualTo(chapterId);
+      assertThat(lecture.getChapterViews().get(0).title()).isEqualTo("수정된 챕터");
+      assertThat(lecture.getChapterViews().get(0).content()).isEqualTo("수정된 내용");
+      assertThat(lecture.getChapterViews().get(0).durationSeconds()).isEqualTo(900);
+    }
+
+    @Test
+    @DisplayName("성공: 관리자(MASTER)가 DRAFT 상태 강의의 챕터를 수정한다")
+    void updateChapter_byMaster_success() {
+      Lecture lecture = draftLectureWithChapters(UUID.randomUUID(), 1);
+      UUID chapterId = lecture.getChapterViews().get(0).id();
+      UUID master = UUID.randomUUID();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      ChapterUpdateResult result =
+          lectureCommandService.updateChapter(
+              new ChapterUpdateCommand(
+                  lecture.getId(), chapterId, master, "MASTER", "수정된 챕터", "수정된 내용", 900));
+
+      assertThat(result.lectureId()).isEqualTo(lecture.getId());
+      assertThat(result.chapterId()).isEqualTo(chapterId);
+    }
+
+    @Test
+    @DisplayName("실패: 존재하지 않는 강의의 챕터 수정")
+    void updateChapter_lectureNotFound_throws() {
+      UUID lectureId = UUID.randomUUID();
+      UUID chapterId = UUID.randomUUID();
+
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.empty());
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.updateChapter(
+                      new ChapterUpdateCommand(
+                          lectureId, chapterId, UUID.randomUUID(), "INSTRUCTOR", "제목", "내용", 600)))
+          .isInstanceOf(LectureNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 존재하지 않는 챕터 수정")
+    void updateChapter_chapterNotFound_throws() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLectureWithChapters(instructorId, 1);
+      UUID notFoundChapterId = UUID.randomUUID();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.updateChapter(
+                      new ChapterUpdateCommand(
+                          lecture.getId(),
+                          notFoundChapterId,
+                          instructorId,
+                          "INSTRUCTOR",
+                          "제목",
+                          "내용",
+                          600)))
+          .isInstanceOf(ChapterNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("실패: DRAFT가 아닌 강의의 챕터 수정")
+    void updateChapter_notDraft_throws() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = publishedLecture(instructorId);
+      UUID chapterId = lecture.getChapterViews().get(0).id();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.updateChapter(
+                      new ChapterUpdateCommand(
+                          lecture.getId(), chapterId, instructorId, "INSTRUCTOR", "제목", "내용", 600)))
+          .isInstanceOf(InvalidLectureStatusException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 소유자가 아닌 사용자가 챕터 수정")
+    void updateChapter_notOwner_throws() {
+      Lecture lecture = draftLectureWithChapters(UUID.randomUUID(), 1);
+      UUID chapterId = lecture.getChapterViews().get(0).id();
+      UUID otherUser = UUID.randomUUID();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.updateChapter(
+                      new ChapterUpdateCommand(
+                          lecture.getId(), chapterId, otherUser, "INSTRUCTOR", "제목", "내용", 600)))
+          .isInstanceOf(LectureAccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("실패: Command 검증 - lectureId null")
+    void updateChapter_nullLectureId_throws() {
+      assertThatThrownBy(
+              () ->
+                  new ChapterUpdateCommand(
+                      null, UUID.randomUUID(), UUID.randomUUID(), "INSTRUCTOR", "제목", "내용", 600))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+
+    @Test
+    @DisplayName("실패: Command 검증 - chapterId null")
+    void updateChapter_nullChapterId_throws() {
+      assertThatThrownBy(
+              () ->
+                  new ChapterUpdateCommand(
+                      UUID.randomUUID(), null, UUID.randomUUID(), "INSTRUCTOR", "제목", "내용", 600))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+
+    @Test
+    @DisplayName("실패: Command 검증 - actorId null")
+    void updateChapter_nullActorId_throws() {
+      assertThatThrownBy(
+              () ->
+                  new ChapterUpdateCommand(
+                      UUID.randomUUID(), UUID.randomUUID(), null, "INSTRUCTOR", "제목", "내용", 600))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+
+    @Test
+    @DisplayName("실패: Command 검증 - actorRole blank")
+    void updateChapter_blankActorRole_throws() {
+      assertThatThrownBy(
+              () ->
+                  new ChapterUpdateCommand(
+                      UUID.randomUUID(),
+                      UUID.randomUUID(),
+                      UUID.randomUUID(),
+                      "  ",
+                      "제목",
+                      "내용",
+                      600))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+  }
+
+  @Nested
+  @DisplayName("챕터 삭제")
+  class DeleteChapter {
+
+    @Test
+    @DisplayName("성공: 강의 소유자가 DRAFT 상태 강의의 챕터를 삭제한다")
+    void deleteChapter_byOwner_success() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLectureWithChapters(instructorId, 2);
+      UUID chapterId = lecture.getChapterViews().get(0).id();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      ChapterDeleteResult result =
+          lectureCommandService.deleteChapter(
+              new ChapterDeleteCommand(lecture.getId(), chapterId, instructorId, "INSTRUCTOR"));
+
+      assertThat(result.lectureId()).isEqualTo(lecture.getId());
+      assertThat(result.chapterId()).isEqualTo(chapterId);
+      assertThat(lecture.getChapterCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("성공: 관리자(MASTER)가 DRAFT 상태 강의의 챕터를 삭제한다")
+    void deleteChapter_byMaster_success() {
+      Lecture lecture = draftLectureWithChapters(UUID.randomUUID(), 2);
+      UUID chapterId = lecture.getChapterViews().get(0).id();
+      UUID master = UUID.randomUUID();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      ChapterDeleteResult result =
+          lectureCommandService.deleteChapter(
+              new ChapterDeleteCommand(lecture.getId(), chapterId, master, "MASTER"));
+
+      assertThat(result.lectureId()).isEqualTo(lecture.getId());
+      assertThat(result.chapterId()).isEqualTo(chapterId);
+      assertThat(lecture.getChapterCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("실패: 존재하지 않는 강의의 챕터 삭제")
+    void deleteChapter_lectureNotFound_throws() {
+      UUID lectureId = UUID.randomUUID();
+
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.empty());
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.deleteChapter(
+                      new ChapterDeleteCommand(
+                          lectureId, UUID.randomUUID(), UUID.randomUUID(), "INSTRUCTOR")))
+          .isInstanceOf(LectureNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 존재하지 않는 챕터 삭제")
+    void deleteChapter_chapterNotFound_throws() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLectureWithChapters(instructorId, 1);
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.deleteChapter(
+                      new ChapterDeleteCommand(
+                          lecture.getId(), UUID.randomUUID(), instructorId, "INSTRUCTOR")))
+          .isInstanceOf(ChapterNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("실패: DRAFT가 아닌 강의의 챕터 삭제")
+    void deleteChapter_notDraft_throws() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = publishedLecture(instructorId);
+      UUID chapterId = lecture.getChapterViews().get(0).id();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.deleteChapter(
+                      new ChapterDeleteCommand(
+                          lecture.getId(), chapterId, instructorId, "INSTRUCTOR")))
+          .isInstanceOf(InvalidLectureStatusException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 소유자가 아닌 사용자가 챕터 삭제")
+    void deleteChapter_notOwner_throws() {
+      Lecture lecture = draftLectureWithChapters(UUID.randomUUID(), 1);
+      UUID chapterId = lecture.getChapterViews().get(0).id();
+      UUID otherUser = UUID.randomUUID();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.deleteChapter(
+                      new ChapterDeleteCommand(
+                          lecture.getId(), chapterId, otherUser, "INSTRUCTOR")))
+          .isInstanceOf(LectureAccessDeniedException.class);
+    }
+  }
+
+  @Nested
+  @DisplayName("챕터 순서 변경")
+  class ReorderChapters {
+
+    @Test
+    @DisplayName("성공: 여러 챕터 순서를 일괄 변경한다")
+    void reorderChapters_success() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLectureWithChapters(instructorId, 3);
+
+      UUID firstChapterId = lecture.getChapterViews().get(0).id();
+      UUID secondChapterId = lecture.getChapterViews().get(1).id();
+      UUID thirdChapterId = lecture.getChapterViews().get(2).id();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      ChapterReorderResult result =
+          lectureCommandService.reorderChapters(
+              new ChapterReorderCommand(
+                  lecture.getId(),
+                  instructorId,
+                  "INSTRUCTOR",
+                  List.of(
+                      new ChapterReorderCommand.ChapterOrderCommand(firstChapterId, 3),
+                      new ChapterReorderCommand.ChapterOrderCommand(secondChapterId, 1),
+                      new ChapterReorderCommand.ChapterOrderCommand(thirdChapterId, 2))));
+
+      assertThat(result.lectureId()).isEqualTo(lecture.getId());
+      assertThat(lecture.getChapterViews())
+          .extracting("sortOrder")
+          .containsExactlyInAnyOrder(1, 2, 3);
+    }
+
+    @Test
+    @DisplayName("성공: swap 케이스도 처리한다")
+    void reorderChapters_swap_success() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLectureWithChapters(instructorId, 2);
+
+      UUID firstChapterId = lecture.getChapterViews().get(0).id();
+      UUID secondChapterId = lecture.getChapterViews().get(1).id();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      lectureCommandService.reorderChapters(
+          new ChapterReorderCommand(
+              lecture.getId(),
+              instructorId,
+              "INSTRUCTOR",
+              List.of(
+                  new ChapterReorderCommand.ChapterOrderCommand(firstChapterId, 2),
+                  new ChapterReorderCommand.ChapterOrderCommand(secondChapterId, 1))));
+
+      assertThat(lecture.getChapterViews())
+          .filteredOn(view -> view.id().equals(firstChapterId))
+          .singleElement()
+          .extracting("sortOrder")
+          .isEqualTo(2);
+
+      assertThat(lecture.getChapterViews())
+          .filteredOn(view -> view.id().equals(secondChapterId))
+          .singleElement()
+          .extracting("sortOrder")
+          .isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("성공: 일부 챕터만 순서를 변경한다")
+    void reorderChapters_partial_success() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLectureWithChapters(instructorId, 2);
+
+      UUID firstChapterId = lecture.getChapterViews().get(0).id();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      lectureCommandService.reorderChapters(
+          new ChapterReorderCommand(
+              lecture.getId(),
+              instructorId,
+              "INSTRUCTOR",
+              List.of(new ChapterReorderCommand.ChapterOrderCommand(firstChapterId, 3))));
+
+      assertThat(lecture.getChapterViews())
+          .filteredOn(view -> view.id().equals(firstChapterId))
+          .singleElement()
+          .extracting("sortOrder")
+          .isEqualTo(3);
+
+      assertThat(lecture.getChapterViews())
+          .filteredOn(view -> !view.id().equals(firstChapterId))
+          .singleElement()
+          .extracting("sortOrder")
+          .isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("실패: 존재하지 않는 챕터 ID가 포함되면 예외 발생")
+    void reorderChapters_chapterNotFound_throws() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLectureWithChapters(instructorId, 2);
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.reorderChapters(
+                      new ChapterReorderCommand(
+                          lecture.getId(),
+                          instructorId,
+                          "INSTRUCTOR",
+                          List.of(
+                              new ChapterReorderCommand.ChapterOrderCommand(
+                                  UUID.randomUUID(), 3)))))
+          .isInstanceOf(ChapterNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 변경 후 sortOrder가 중복되면 예외 발생")
+    void reorderChapters_duplicateSortOrder_throws() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLectureWithChapters(instructorId, 3);
+
+      UUID firstChapterId = lecture.getChapterViews().get(0).id();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.reorderChapters(
+                      new ChapterReorderCommand(
+                          lecture.getId(),
+                          instructorId,
+                          "INSTRUCTOR",
+                          List.of(
+                              new ChapterReorderCommand.ChapterOrderCommand(firstChapterId, 2)))))
+          .isInstanceOf(DuplicateSortOrderException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 빈 orders이면 Command 예외 발생")
+    void reorderChapters_emptyOrders_throws() {
+      assertThatThrownBy(
+              () ->
+                  new ChapterReorderCommand(
+                      UUID.randomUUID(), UUID.randomUUID(), "INSTRUCTOR", List.of()))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 중복 chapterId가 있으면 Command 예외 발생")
+    void reorderChapters_duplicatedChapterId_throws() {
+      UUID chapterId = UUID.randomUUID();
+
+      assertThatThrownBy(
+              () ->
+                  new ChapterReorderCommand(
+                      UUID.randomUUID(),
+                      UUID.randomUUID(),
+                      "INSTRUCTOR",
+                      List.of(
+                          new ChapterReorderCommand.ChapterOrderCommand(chapterId, 1),
+                          new ChapterReorderCommand.ChapterOrderCommand(chapterId, 2))))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+
+    @Test
+    @DisplayName("실패: sortOrder가 1보다 작으면 Command 예외 발생")
+    void reorderChapters_invalidSortOrder_throws() {
+      assertThatThrownBy(() -> new ChapterReorderCommand.ChapterOrderCommand(UUID.randomUUID(), 0))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+  }
+
   // 헬퍼
   private Lecture draftLecture(UUID instructorId) {
     return Lecture.create(
@@ -490,5 +941,17 @@ class LectureCommandServiceImplTest {
     l.submitForReview();
     l.approve();
     return l;
+  }
+
+  private Lecture draftLectureWithChapters(UUID instructorId, int chapterCount) {
+    Lecture lecture =
+        Lecture.create(
+            instructorId, "강사명", "BACKEND", "스프링 강의", "부제", "설명", DurationPolicy.DAYS_365, 10000L);
+
+    for (int i = 1; i <= chapterCount; i++) {
+      lecture.addChapter("챕터" + i, "내용" + i, i, 600);
+    }
+
+    return lecture;
   }
 }
