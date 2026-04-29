@@ -6,6 +6,10 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreate
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.service.LectureCommandService;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureDetail;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureSummary;
@@ -41,5 +45,15 @@ public class LectureServiceImpl implements LectureService {
   @Override
   public ChapterCreateResult createChapter(ChapterCreateCommand command) {
     return lectureCommandService.createChapter(command);
+  }
+
+  @Override
+  public LectureUpdateResult updateLecture(LectureUpdateCommand command) {
+    return lectureCommandService.updateLecture(command);
+  }
+
+  @Override
+  public LectureDeleteResult deleteLecture(LectureDeleteCommand command) {
+    return lectureCommandService.deleteLecture(command);
   }
 }

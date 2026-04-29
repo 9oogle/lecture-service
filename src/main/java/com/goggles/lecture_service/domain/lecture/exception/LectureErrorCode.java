@@ -9,6 +9,8 @@ public enum LectureErrorCode {
 
   // 강의
   LECTURE_NOT_FOUND("해당 강의를 찾을 수 없습니다."),
+  LECTURE_ID_REQUIRED("강의 ID는 필수입니다."),
+  LECTURE_ACCESS_DENIED("강의에 대한 접근 권한이 없습니다."),
   LECTURE_INVALID_STATUS("현재 상태에서 허용되지 않는 작업입니다."),
   LECTURE_CHAPTER_REQUIRED("챕터가 최소 1개 이상 있어야 합니다."),
   LECTURE_CATEGORY_REQUIRED("카테고리는 필수입니다."),
@@ -16,6 +18,11 @@ public enum LectureErrorCode {
   LECTURE_TITLE_REQUIRED("강의 제목은 필수입니다."),
   LECTURE_TITLE_TOO_LONG("강의 제목은 200자 이하여야 합니다."),
   LECTURE_SUBTITLE_TOO_LONG("강의 부제목은 300자 이하여야 합니다."),
+
+  // 요청 필드 검증
+  USER_ID_REQUIRED("사용자 ID는 필수입니다."),
+  USER_ROLE_REQUIRED("사용자 권한은 필수입니다."),
+  LECTURE_DURATION_POLICY_REQUIRED("수강 기간 정책은 필수입니다."),
 
   // 챕터
   CHAPTER_NOT_FOUND("해당 챕터를 찾을 수 없습니다."),
@@ -29,6 +36,7 @@ public enum LectureErrorCode {
   CHAPTER_DURATION_REQUIRED("챕터 영상 정보는 필수입니다."),
 
   // 가격
+  PRICE_REQUIRED("가격은 필수입니다."),
   PRICE_NEGATIVE("가격은 0원 이상이어야 합니다."),
 
   // 강사

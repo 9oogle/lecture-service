@@ -8,6 +8,10 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreate
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.service.LectureCommandServiceImpl;
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
@@ -16,6 +20,7 @@ import com.goggles.lecture_service.domain.lecture.exception.DuplicateSortOrderEx
 import com.goggles.lecture_service.domain.lecture.exception.InvalidCategoryException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureFieldException;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureStatusException;
+import com.goggles.lecture_service.domain.lecture.exception.LectureAccessDeniedException;
 import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
 import java.util.Optional;
@@ -138,7 +143,7 @@ class LectureCommandServiceImplTest {
           .isInstanceOf(InvalidLectureFieldException.class);
       verify(lectureRepository, times(0)).save(any(Lecture.class));
     }
-  }
+  } // 강의 생성 끝
 
   @Nested
   @DisplayName("챕터 생성")
@@ -235,5 +240,255 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(() -> lectureCommandService.createChapter(chapterCommand))
           .isInstanceOf(InvalidLectureFieldException.class);
     }
+  } // 챕터 생성 끝
+
+  @Nested
+  @DisplayName("강의 수정")
+  class UpdateLecture {
+
+    @Test
+    @DisplayName("성공: 강의 소유자(강사)가 DRAFT 상태 강의 수정")
+    void updateLecture_byOwner_success() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLecture(instructorId);
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      LectureUpdateResult result =
+          lectureCommandService.updateLecture(
+              new LectureUpdateCommand(
+                  lecture.getId(),
+                  instructorId,
+                  "INSTRUCTOR",
+                  "BACKEND",
+                  "수정된 제목",
+                  "수정된 부제",
+                  "수정된 설명",
+                  DurationPolicy.DAYS_180,
+                  20000L));
+
+      assertThat(result.lectureId()).isEqualTo(lecture.getId());
+      assertThat(lecture.getContent().getTitle()).isEqualTo("수정된 제목");
+    }
+
+    @Test
+    @DisplayName("성공: 관리자(MASTER)가 DRAFT 상태 강의 수정")
+    void updateLecture_byMaster_success() {
+      Lecture lecture = draftLecture(UUID.randomUUID()); // 다른 강사 소유
+      UUID master = UUID.randomUUID();
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      LectureUpdateResult result =
+          lectureCommandService.updateLecture(
+              new LectureUpdateCommand(
+                  lecture.getId(),
+                  master,
+                  "MASTER",
+                  "BACKEND",
+                  "수정된 제목",
+                  null,
+                  null,
+                  DurationPolicy.DAYS_365,
+                  10000L));
+
+      assertThat(result.lectureId()).isEqualTo(lecture.getId());
+    }
+
+    @Test
+    @DisplayName("실패: 존재하지 않는 강의 수정")
+    void updateLecture_lectureNotFound_throws() {
+      UUID lectureId = UUID.randomUUID();
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.empty());
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.updateLecture(
+                      new LectureUpdateCommand(
+                          lectureId,
+                          UUID.randomUUID(),
+                          "INSTRUCTOR",
+                          "BACKEND",
+                          "제목",
+                          null,
+                          null,
+                          DurationPolicy.DAYS_365,
+                          10000L)))
+          .isInstanceOf(LectureNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("실패: DRAFT가 아닌 상태에서 수정")
+    void updateLecture_notDraft_throws() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = publishedLecture(instructorId); // PUBLISHED 상태
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.updateLecture(
+                      new LectureUpdateCommand(
+                          lecture.getId(),
+                          instructorId,
+                          "INSTRUCTOR",
+                          "BACKEND",
+                          "제목",
+                          null,
+                          null,
+                          DurationPolicy.DAYS_365,
+                          10000L)))
+          .isInstanceOf(InvalidLectureStatusException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 강의 소유자가 아닌 강사가 수정")
+    void updateLecture_notOwner_throws() {
+      Lecture lecture = draftLecture(UUID.randomUUID()); // 다른 강사
+      UUID otherInstructor = UUID.randomUUID();
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.updateLecture(
+                      new LectureUpdateCommand(
+                          lecture.getId(),
+                          otherInstructor,
+                          "INSTRUCTOR",
+                          "BACKEND",
+                          "제목",
+                          null,
+                          null,
+                          DurationPolicy.DAYS_365,
+                          10000L)))
+          .isInstanceOf(LectureAccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("실패: lectureId null Command 예외")
+    void updateLecture_nullLectureId_throws() {
+      assertThatThrownBy(
+              () ->
+                  new LectureUpdateCommand(
+                      null,
+                      UUID.randomUUID(),
+                      "INSTRUCTOR",
+                      "BACKEND",
+                      "제목",
+                      null,
+                      null,
+                      DurationPolicy.DAYS_365,
+                      10000L))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+
+    @Test
+    @DisplayName("실패: actorRole blank Command 예외")
+    void updateLecture_blankActorRole_throws() {
+      assertThatThrownBy(
+              () ->
+                  new LectureUpdateCommand(
+                      UUID.randomUUID(),
+                      UUID.randomUUID(),
+                      "  ",
+                      "BACKEND",
+                      "제목",
+                      null,
+                      null,
+                      DurationPolicy.DAYS_365,
+                      10000L))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+
+    @Test
+    @DisplayName("실패: price null Command 예외")
+    void updateLecture_nullPrice_throws() {
+      assertThatThrownBy(
+              () ->
+                  new LectureUpdateCommand(
+                      UUID.randomUUID(),
+                      UUID.randomUUID(),
+                      "INSTRUCTOR",
+                      "BACKEND",
+                      "제목",
+                      null,
+                      null,
+                      DurationPolicy.DAYS_365,
+                      null))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+  }
+
+  @Nested
+  @DisplayName("강의 삭제")
+  class DeleteLecture {
+
+    @Test
+    @DisplayName("성공: 강의 소유자가 DRAFT 상태 강의 삭제")
+    void deleteLecture_byOwner_success() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLecture(instructorId);
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      LectureDeleteResult result =
+          lectureCommandService.deleteLecture(
+              new LectureDeleteCommand(lecture.getId(), instructorId, "INSTRUCTOR"));
+
+      assertThat(result.lectureId()).isEqualTo(lecture.getId());
+      assertThat(lecture.getDeletedAt()).isNotNull();
+      assertThat(lecture.getDeletedBy()).isEqualTo(instructorId);
+    }
+
+    @Test
+    @DisplayName("성공: 관리자(MASTER)가 다른 강사의 DRAFT 강의 삭제")
+    void deleteLecture_byMaster_success() {
+      Lecture lecture = draftLecture(UUID.randomUUID());
+      UUID master = UUID.randomUUID();
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      lectureCommandService.deleteLecture(
+          new LectureDeleteCommand(lecture.getId(), master, "MASTER"));
+
+      assertThat(lecture.getDeletedBy()).isEqualTo(master);
+    }
+
+    @Test
+    @DisplayName("실패: DRAFT가 아닌 강의 삭제")
+    void deleteLecture_notDraft_throws() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = publishedLecture(instructorId);
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.deleteLecture(
+                      new LectureDeleteCommand(lecture.getId(), instructorId, "INSTRUCTOR")))
+          .isInstanceOf(InvalidLectureStatusException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 소유자도 관리자도 아닌 사용자가 삭제")
+    void deleteLecture_notOwnerNotAdmin_throws() {
+      Lecture lecture = draftLecture(UUID.randomUUID());
+      UUID stranger = UUID.randomUUID();
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.deleteLecture(
+                      new LectureDeleteCommand(lecture.getId(), stranger, "STUDENT")))
+          .isInstanceOf(LectureAccessDeniedException.class);
+    }
+  }
+
+  // 헬퍼
+  private Lecture draftLecture(UUID instructorId) {
+    return Lecture.create(
+        instructorId, "강사명", "BACKEND", "스프링 강의", "부제", "설명", DurationPolicy.DAYS_365, 10000L);
+  }
+
+  private Lecture publishedLecture(UUID instructorId) {
+    Lecture l = draftLecture(instructorId);
+    l.addChapter("챕터1", "내용", 1, 600);
+    l.submitForReview();
+    l.approve();
+    return l;
   }
 }

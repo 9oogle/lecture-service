@@ -4,7 +4,12 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreate
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 import com.goggles.lecture_service.domain.lecture.Lecture;
+import com.goggles.lecture_service.domain.lecture.exception.LectureAccessDeniedException;
 import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
 import java.util.UUID;
@@ -17,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class LectureCommandServiceImpl implements LectureCommandService {
 
+  private static final String ROLE_MASTER = "MASTER";
   private final LectureRepository lectureRepository;
 
   @Override
@@ -50,5 +56,54 @@ public class LectureCommandServiceImpl implements LectureCommandService {
             command.title(), command.content(), command.sortOrder(), command.durationSeconds());
 
     return ChapterCreateResult.from(lecture.getId(), chapterId);
+  }
+
+  @Override
+  public LectureUpdateResult updateLecture(LectureUpdateCommand command) {
+    Lecture lecture =
+        lectureRepository
+            .findById(command.lectureId())
+            .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
+
+    validateLectureAccess(lecture, command.actorId(), command.actorRole());
+
+    lecture.updateMetadata(
+        command.title(),
+        command.subtitle(),
+        command.description(),
+        command.category(),
+        command.durationPolicy(),
+        command.price());
+
+    return LectureUpdateResult.from(lecture);
+  }
+
+  @Override
+  public LectureDeleteResult deleteLecture(LectureDeleteCommand command) {
+    Lecture lecture =
+        lectureRepository
+            .findById(command.lectureId())
+            .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
+
+    validateLectureAccess(lecture, command.actorId(), command.actorRole());
+
+    lecture.delete(command.actorId());
+
+    return LectureDeleteResult.from(command.lectureId());
+  }
+
+  // 강의 소유자(강사) 또는 관리자(MASTER)만 통과
+  private void validateLectureAccess(Lecture lecture, UUID actorId, String actorRole) {
+    if (lecture.isOwnedBy(actorId) || isAdmin(actorRole)) {
+      return;
+    }
+    throw new LectureAccessDeniedException();
+  }
+
+  private boolean isAdmin(String actorRole) {
+    // TODO(#로그인): user-service 로그인 API 연동 후 공통 UserRole enum 으로 교체
+    //   위에 상수도 제거
+    // return actorRole == UserRole.MASTER;
+    return ROLE_MASTER.equals(actorRole);
   }
 }
