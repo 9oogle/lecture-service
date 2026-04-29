@@ -4,6 +4,10 @@ import com.goggles.common.pagination.CommonPageRequest;
 import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.application.lecture.LectureService;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterCreateResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterDeleteCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderResult;
+import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
@@ -12,6 +16,11 @@ import com.goggles.lecture_service.application.lecture.query.dto.LectureListQuer
 import com.goggles.lecture_service.application.lecture.query.dto.LectureSummary;
 import com.goggles.lecture_service.presentation.lecture.dto.ChapterCreateRequest;
 import com.goggles.lecture_service.presentation.lecture.dto.ChapterCreateResponse;
+import com.goggles.lecture_service.presentation.lecture.dto.ChapterDeleteResponse;
+import com.goggles.lecture_service.presentation.lecture.dto.ChapterReorderRequest;
+import com.goggles.lecture_service.presentation.lecture.dto.ChapterReorderResponse;
+import com.goggles.lecture_service.presentation.lecture.dto.ChapterUpdateRequest;
+import com.goggles.lecture_service.presentation.lecture.dto.ChapterUpdateResponse;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureCreateRequest;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureCreateResponse;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureDeleteResponse;
@@ -103,5 +112,49 @@ public class LectureController {
       @Valid @RequestBody ChapterCreateRequest request) {
     ChapterCreateResult result = lectureService.createChapter(request.toCommand(lectureId));
     return ChapterCreateResponse.from(result);
+  }
+
+  // 챕터 수정 (DRAFT 상태에서만)
+  @PatchMapping("/{lectureId}/chapters/{chapterId}")
+  public ChapterUpdateResponse updateChapter(
+      @RequestHeader("X-User-Id") UUID userId,
+      @RequestHeader("X-User-Role") String userRole,
+      @PathVariable UUID lectureId,
+      @PathVariable UUID chapterId,
+      @Valid @RequestBody ChapterUpdateRequest request) {
+
+    ChapterUpdateResult result =
+        lectureService.updateChapter(request.toCommand(lectureId, chapterId, userId, userRole));
+
+    return ChapterUpdateResponse.from(result);
+  }
+
+  // 챕터 삭제 (DRAFT 상태에서만)
+  @DeleteMapping("/{lectureId}/chapters/{chapterId}")
+  public ChapterDeleteResponse deleteChapter(
+      @RequestHeader("X-User-Id") UUID userId,
+      @RequestHeader("X-User-Role") String userRole,
+      @PathVariable UUID lectureId,
+      @PathVariable UUID chapterId) {
+
+    ChapterDeleteResult result =
+        lectureService.deleteChapter(
+            new ChapterDeleteCommand(lectureId, chapterId, userId, userRole));
+
+    return ChapterDeleteResponse.from(result);
+  }
+
+  // 챕터 일괄 순서 변경 (DRAFT 상태에서만)
+  @PatchMapping("/{lectureId}/chapters/reorder")
+  public ChapterReorderResponse reorderChapters(
+      @RequestHeader("X-User-Id") UUID userId,
+      @RequestHeader("X-User-Role") String userRole,
+      @PathVariable UUID lectureId,
+      @Valid @RequestBody ChapterReorderRequest request) {
+
+    ChapterReorderResult result =
+        lectureService.reorderChapters(request.toCommand(lectureId, userId, userRole));
+
+    return ChapterReorderResponse.from(result);
   }
 }
