@@ -10,11 +10,11 @@ import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdate
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 
 public interface LectureCommandService {
-	LectureCreateResult createLecture(LectureCreateCommand command);
+  LectureCreateResult createLecture(LectureCreateCommand command);
 
-	ChapterCreateResult createChapter(ChapterCreateCommand command);
+  ChapterCreateResult createChapter(ChapterCreateCommand command);
 
-	LectureUpdateResult updateLecture(LectureUpdateCommand command);
+  LectureUpdateResult updateLecture(LectureUpdateCommand command);
 
-	LectureDeleteResult deleteLecture(LectureDeleteCommand command);
+  LectureDeleteResult deleteLecture(LectureDeleteCommand command);
 }
