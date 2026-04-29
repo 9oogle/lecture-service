@@ -60,7 +60,7 @@ class EnrollmentTest {
     @DisplayName("성공: RESERVE 상태로 생성된다")
     void reserve_success() {
       Enrollment enrollment =
-          Enrollment.reserve(lectureSnapshot, studentId, orderId, DurationPolicy.DAYS_365);
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.DAYS_365);
 
       assertThat(enrollment).isNotNull();
       assertThat(enrollment.getStatus()).isEqualTo(EnrollmentStatus.RESERVE);
@@ -68,7 +68,7 @@ class EnrollmentTest {
       assertThat(enrollment.getInstructorId()).isEqualTo(instructorId);
       assertThat(enrollment.getLectureSnapshot().getLectureTitle()).isEqualTo("스프링 부트 입문");
       assertThat(enrollment.getStudentId()).isEqualTo(studentId);
-      assertThat(enrollment.getOrderId()).isEqualTo(orderId);
+      assertThat(enrollment.getOrderId()).isNull();
       assertThat(enrollment.getActivatedAt()).isNull();
       assertThat(enrollment.getExpiresAt()).isNull();
       assertThat(enrollment.getLastAccessedAt()).isNull();
@@ -77,31 +77,21 @@ class EnrollmentTest {
     @Test
     @DisplayName("실패: lectureSnapshot 이 null 이면 예외")
     void reserve_nullSnapshot_throws() {
-      assertThatThrownBy(
-              () -> Enrollment.reserve(null, studentId, orderId, DurationPolicy.DAYS_365))
+      assertThatThrownBy(() -> Enrollment.reserve(null, studentId, DurationPolicy.DAYS_365))
           .isInstanceOf(InvalidEnrollmentFieldException.class);
     }
 
     @Test
     @DisplayName("실패: studentId 가 null 이면 예외")
     void reserve_nullStudentId_throws() {
-      assertThatThrownBy(
-              () -> Enrollment.reserve(lectureSnapshot, null, orderId, DurationPolicy.DAYS_365))
-          .isInstanceOf(InvalidEnrollmentFieldException.class);
-    }
-
-    @Test
-    @DisplayName("실패: orderId 가 null 이면 예외")
-    void reserve_nullOrderId_throws() {
-      assertThatThrownBy(
-              () -> Enrollment.reserve(lectureSnapshot, studentId, null, DurationPolicy.DAYS_365))
+      assertThatThrownBy(() -> Enrollment.reserve(lectureSnapshot, null, DurationPolicy.DAYS_365))
           .isInstanceOf(InvalidEnrollmentFieldException.class);
     }
 
     @Test
     @DisplayName("실패: durationPolicy 가 null 이면 예외")
     void reserve_nullDurationPolicy_throws() {
-      assertThatThrownBy(() -> Enrollment.reserve(lectureSnapshot, studentId, orderId, null))
+      assertThatThrownBy(() -> Enrollment.reserve(lectureSnapshot, studentId, null))
           .isInstanceOf(InvalidEnrollmentFieldException.class);
     }
   }
@@ -111,26 +101,27 @@ class EnrollmentTest {
   class Activate {
 
     @Test
-    @DisplayName("성공: RESERVE → ACTIVE 전환되며 만료일이 설정된다")
+    @DisplayName("성공: RESERVE → ACTIVE 전환되며 만료일과 orderId 가 설정된다")
     void activate_success() {
       Enrollment enrollment =
-          Enrollment.reserve(lectureSnapshot, studentId, orderId, DurationPolicy.DAYS_365);
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.DAYS_365);
       LocalDateTime now = LocalDateTime.now();
 
-      enrollment.activate(now);
+      enrollment.activate(now, orderId);
 
       assertThat(enrollment.getStatus()).isEqualTo(EnrollmentStatus.ACTIVE);
       assertThat(enrollment.getActivatedAt()).isEqualTo(now);
       assertThat(enrollment.getExpiresAt()).isEqualTo(now.plusDays(365));
+      assertThat(enrollment.getOrderId()).isEqualTo(orderId);
     }
 
     @Test
     @DisplayName("성공: UNLIMITED 정책이면 만료일이 9999년으로 설정된다")
     void activate_unlimited_setsFarFuture() {
       Enrollment enrollment =
-          Enrollment.reserve(lectureSnapshot, studentId, orderId, DurationPolicy.UNLIMITED);
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.UNLIMITED);
 
-      enrollment.activate(LocalDateTime.now());
+      enrollment.activate(LocalDateTime.now(), orderId);
 
       assertThat(enrollment.getExpiresAt().getYear()).isEqualTo(9999);
     }
@@ -139,11 +130,21 @@ class EnrollmentTest {
     @DisplayName("실패: RESERVE 가 아닌 상태에서 activate 하면 예외")
     void activate_notReserveStatus_throws() {
       Enrollment enrollment =
-          Enrollment.reserve(lectureSnapshot, studentId, orderId, DurationPolicy.DAYS_365);
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.DAYS_365);
       enrollment.cancel();
 
-      assertThatThrownBy(() -> enrollment.activate(LocalDateTime.now()))
+      assertThatThrownBy(() -> enrollment.activate(LocalDateTime.now(), orderId))
           .isInstanceOf(InvalidEnrollmentStatusException.class);
+    }
+
+    @Test
+    @DisplayName("실패: activate 시 orderId 가 null 이면 예외")
+    void activate_nullOrderId_throws() {
+      Enrollment enrollment =
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.DAYS_365);
+
+      assertThatThrownBy(() -> enrollment.activate(LocalDateTime.now(), null))
+          .isInstanceOf(InvalidEnrollmentFieldException.class);
     }
   }
 
@@ -155,7 +156,7 @@ class EnrollmentTest {
     @DisplayName("성공: RESERVE 상태에서 취소 가능")
     void cancel_fromReserve_success() {
       Enrollment enrollment =
-          Enrollment.reserve(lectureSnapshot, studentId, orderId, DurationPolicy.DAYS_365);
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.DAYS_365);
 
       enrollment.cancel();
 
@@ -166,8 +167,8 @@ class EnrollmentTest {
     @DisplayName("성공: ACTIVE 상태에서 취소 가능 (환불)")
     void cancel_fromActive_success() {
       Enrollment enrollment =
-          Enrollment.reserve(lectureSnapshot, studentId, orderId, DurationPolicy.DAYS_365);
-      enrollment.activate(LocalDateTime.now());
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.DAYS_365);
+      enrollment.activate(LocalDateTime.now(), orderId);
 
       enrollment.cancel();
 
@@ -178,7 +179,7 @@ class EnrollmentTest {
     @DisplayName("실패: 이미 CANCELED 인 enrollment 는 다시 취소 불가")
     void cancel_alreadyCanceled_throws() {
       Enrollment enrollment =
-          Enrollment.reserve(lectureSnapshot, studentId, orderId, DurationPolicy.DAYS_365);
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.DAYS_365);
       enrollment.cancel();
 
       assertThatThrownBy(enrollment::cancel).isInstanceOf(InvalidEnrollmentStatusException.class);
@@ -193,8 +194,8 @@ class EnrollmentTest {
     @DisplayName("성공: ACTIVE → EXPIRED 전환")
     void expire_fromActive_success() {
       Enrollment enrollment =
-          Enrollment.reserve(lectureSnapshot, studentId, orderId, DurationPolicy.DAYS_365);
-      enrollment.activate(LocalDateTime.now());
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.DAYS_365);
+      enrollment.activate(LocalDateTime.now(), orderId);
 
       enrollment.expire();
 
@@ -205,7 +206,7 @@ class EnrollmentTest {
     @DisplayName("실패: RESERVE 상태에서 expire 호출 시 예외")
     void expire_fromReserve_throws() {
       Enrollment enrollment =
-          Enrollment.reserve(lectureSnapshot, studentId, orderId, DurationPolicy.DAYS_365);
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.DAYS_365);
 
       assertThatThrownBy(enrollment::expire).isInstanceOf(InvalidEnrollmentStatusException.class);
     }
@@ -219,8 +220,8 @@ class EnrollmentTest {
     @DisplayName("성공: ACTIVE 상태에서 lastAccessedAt 갱신")
     void touch_fromActive_success() {
       Enrollment enrollment =
-          Enrollment.reserve(lectureSnapshot, studentId, orderId, DurationPolicy.DAYS_365);
-      enrollment.activate(LocalDateTime.now());
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.DAYS_365);
+      enrollment.activate(LocalDateTime.now(), orderId);
       LocalDateTime accessTime = LocalDateTime.now();
 
       enrollment.touchLastAccessed(accessTime);
@@ -232,7 +233,7 @@ class EnrollmentTest {
     @DisplayName("실패: RESERVE 상태에서 호출 시 예외")
     void touch_fromReserve_throws() {
       Enrollment enrollment =
-          Enrollment.reserve(lectureSnapshot, studentId, orderId, DurationPolicy.DAYS_365);
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.DAYS_365);
 
       assertThatThrownBy(() -> enrollment.touchLastAccessed(LocalDateTime.now()))
           .isInstanceOf(InvalidEnrollmentStatusException.class);
@@ -242,8 +243,8 @@ class EnrollmentTest {
     @DisplayName("실패: EXPIRED 상태에서 호출 시 예외")
     void touch_fromExpired_throws() {
       Enrollment enrollment =
-          Enrollment.reserve(lectureSnapshot, studentId, orderId, DurationPolicy.DAYS_365);
-      enrollment.activate(LocalDateTime.now());
+          Enrollment.reserve(lectureSnapshot, studentId, DurationPolicy.DAYS_365);
+      enrollment.activate(LocalDateTime.now(), orderId);
       enrollment.expire();
 
       assertThatThrownBy(() -> enrollment.touchLastAccessed(LocalDateTime.now()))

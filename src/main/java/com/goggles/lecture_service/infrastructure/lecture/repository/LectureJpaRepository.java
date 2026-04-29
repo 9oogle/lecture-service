@@ -17,5 +17,7 @@ public interface LectureJpaRepository extends JpaRepository<Lecture, UUID> {
   @Query(value = "SELECT * FROM lecture.p_lecture WHERE id = :id", nativeQuery = true)
   Optional<Lecture> findByIdIncludeDeleted(@Param("id") UUID id);
 
+  List<Lecture> findAllByIdIn(List<UUID> ids);
+
   Optional<Lecture> findByIdAndStatus(UUID id, LectureStatus status);
 }

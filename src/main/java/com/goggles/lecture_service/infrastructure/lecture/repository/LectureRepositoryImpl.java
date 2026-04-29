@@ -36,6 +36,11 @@ public class LectureRepositoryImpl implements LectureRepository {
   }
 
   @Override
+  public List<Lecture> findAllByIdIn(List<UUID> ids) {
+    return lectureJpaRepository.findAllByIdIn(ids);
+  }
+
+  @Override
   public Optional<Lecture> findByIdIncludeDeleted(UUID id) {
     return lectureJpaRepository.findByIdIncludeDeleted(id);
   }

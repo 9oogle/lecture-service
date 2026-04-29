@@ -16,6 +16,8 @@ public interface LectureRepository {
 
   Optional<Lecture> findByIdAndStatus(UUID id, LectureStatus status);
 
+  List<Lecture> findAllByIdIn(List<UUID> ids);
+
   // 관리자 전용 - 삭제된 것도 포함
   Optional<Lecture> findByIdIncludeDeleted(UUID id);
 }

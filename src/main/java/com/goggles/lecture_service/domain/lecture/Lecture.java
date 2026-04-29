@@ -191,6 +191,11 @@ public class Lecture extends BaseAudit {
     this.status = LectureStatus.HIDDEN;
   }
 
+  // 주문 가능 여부
+  public boolean isOrderable() {
+    return this.status == LectureStatus.PUBLISHED;
+  }
+
   // 내부 검증 및 편의 메서드
 
   private void validateDraftStatus() {
