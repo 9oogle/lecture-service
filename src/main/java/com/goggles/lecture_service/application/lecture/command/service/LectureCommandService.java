@@ -9,17 +9,14 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorde
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureApproveCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureApproveResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureHideCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureHideResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureRejectCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureRejectResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 
@@ -32,13 +29,13 @@ public interface LectureCommandService {
 
   LectureDeleteResult deleteLecture(LectureDeleteCommand command);
 
-  LectureSubmitReviewResult submitReview(LectureSubmitReviewCommand command);
+  LectureStatusChangeResult submitReview(LectureSubmitReviewCommand command);
 
-  LectureApproveResult approveLecture(LectureApproveCommand command);
+  LectureStatusChangeResult approveLecture(LectureApproveCommand command);
 
-  LectureRejectResult rejectLecture(LectureRejectCommand command);
+  LectureStatusChangeResult rejectLecture(LectureRejectCommand command);
 
-  LectureHideResult hideLecture(LectureHideCommand command);
+  LectureStatusChangeResult hideLecture(LectureHideCommand command);
 
   ChapterUpdateResult updateChapter(ChapterUpdateCommand command);
 

@@ -4,9 +4,11 @@ import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
 import java.util.UUID;
 
-public record LectureRejectResult(UUID lectureId, LectureStatus status, String rejectionReason) {
-  public static LectureRejectResult from(Lecture lecture) {
-    return new LectureRejectResult(
+public record LectureStatusChangeResult(
+    UUID lectureId, LectureStatus status, String rejectionReason) {
+
+  public static LectureStatusChangeResult from(Lecture lecture) {
+    return new LectureStatusChangeResult(
         lecture.getId(), lecture.getStatus(), lecture.getRejectionReason());
   }
 }

@@ -11,17 +11,14 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorde
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureApproveCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureApproveResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureHideCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureHideResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureRejectCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureRejectResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.service.LectureCommandService;
@@ -72,22 +69,22 @@ public class LectureServiceImpl implements LectureService {
   }
 
   @Override
-  public LectureSubmitReviewResult submitReview(LectureSubmitReviewCommand command) {
+  public LectureStatusChangeResult submitReview(LectureSubmitReviewCommand command) {
     return lectureCommandService.submitReview(command);
   }
 
   @Override
-  public LectureApproveResult approveLecture(LectureApproveCommand command) {
+  public LectureStatusChangeResult approveLecture(LectureApproveCommand command) {
     return lectureCommandService.approveLecture(command);
   }
 
   @Override
-  public LectureRejectResult rejectLecture(LectureRejectCommand command) {
+  public LectureStatusChangeResult rejectLecture(LectureRejectCommand command) {
     return lectureCommandService.rejectLecture(command);
   }
 
   @Override
-  public LectureHideResult hideLecture(LectureHideCommand command) {
+  public LectureStatusChangeResult hideLecture(LectureHideCommand command) {
     return lectureCommandService.hideLecture(command);
   }
 

@@ -9,17 +9,14 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorde
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureApproveCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureApproveResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureHideCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureHideResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureRejectCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureRejectResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 import com.goggles.lecture_service.domain.lecture.Lecture;
@@ -108,7 +105,7 @@ public class LectureCommandServiceImpl implements LectureCommandService {
   }
 
   @Override
-  public LectureSubmitReviewResult submitReview(LectureSubmitReviewCommand command) {
+  public LectureStatusChangeResult submitReview(LectureSubmitReviewCommand command) {
     Lecture lecture =
         lectureRepository
             .findById(command.lectureId())
@@ -118,11 +115,11 @@ public class LectureCommandServiceImpl implements LectureCommandService {
 
     lecture.submitForReview();
 
-    return LectureSubmitReviewResult.from(lecture);
+    return LectureStatusChangeResult.from(lecture);
   }
 
   @Override
-  public LectureApproveResult approveLecture(LectureApproveCommand command) {
+  public LectureStatusChangeResult approveLecture(LectureApproveCommand command) {
     Lecture lecture =
         lectureRepository
             .findById(command.lectureId())
@@ -132,11 +129,11 @@ public class LectureCommandServiceImpl implements LectureCommandService {
 
     lecture.approve();
 
-    return LectureApproveResult.from(lecture);
+    return LectureStatusChangeResult.from(lecture);
   }
 
   @Override
-  public LectureRejectResult rejectLecture(LectureRejectCommand command) {
+  public LectureStatusChangeResult rejectLecture(LectureRejectCommand command) {
     Lecture lecture =
         lectureRepository
             .findById(command.lectureId())
@@ -146,11 +143,11 @@ public class LectureCommandServiceImpl implements LectureCommandService {
 
     lecture.reject(command.reason());
 
-    return LectureRejectResult.from(lecture);
+    return LectureStatusChangeResult.from(lecture);
   }
 
   @Override
-  public LectureHideResult hideLecture(LectureHideCommand command) {
+  public LectureStatusChangeResult hideLecture(LectureHideCommand command) {
     Lecture lecture =
         lectureRepository
             .findById(command.lectureId())
@@ -160,7 +157,7 @@ public class LectureCommandServiceImpl implements LectureCommandService {
 
     lecture.hide();
 
-    return LectureHideResult.from(lecture);
+    return LectureStatusChangeResult.from(lecture);
   }
 
   @Override
