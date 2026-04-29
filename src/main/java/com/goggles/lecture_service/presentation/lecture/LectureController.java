@@ -8,10 +8,12 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterDelete
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterDeleteResult;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderResult;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureApproveCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureHideCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureDetail;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureListQuery;
@@ -26,7 +28,8 @@ import com.goggles.lecture_service.presentation.lecture.dto.ChapterUpdateRespons
 import com.goggles.lecture_service.presentation.lecture.dto.LectureCreateRequest;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureCreateResponse;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureDeleteResponse;
-import com.goggles.lecture_service.presentation.lecture.dto.LectureSubmitReviewResponse;
+import com.goggles.lecture_service.presentation.lecture.dto.LectureRejectRequest;
+import com.goggles.lecture_service.presentation.lecture.dto.LectureStatusChangeResponse;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureUpdateRequest;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureUpdateResponse;
 import jakarta.validation.Valid;
@@ -93,16 +96,55 @@ public class LectureController {
 
   // 강의 승인 요청 (강사 본인만, DRAFT → PENDING_REVIEW)
   @PostMapping("/{lectureId}/submit-review")
-  public LectureSubmitReviewResponse submitReview(
+  public LectureStatusChangeResponse submitReview(
       @RequestHeader("X-User-Id") UUID userId,
-      // TODO(#로그인): user-service 로그인 API 연동 후 defaultValue 제거
-      @RequestHeader(value = "X-User-Role", defaultValue = "INSTRUCTOR") String userRole,
+      @RequestHeader(value = "X-User-Role") String userRole,
       @PathVariable UUID lectureId) {
 
-    LectureSubmitReviewResult result =
+    LectureStatusChangeResult result =
         lectureService.submitReview(new LectureSubmitReviewCommand(lectureId, userId, userRole));
 
-    return LectureSubmitReviewResponse.from(result);
+    return LectureStatusChangeResponse.from(result);
+  }
+
+  // 관리자: 승인 (PENDING_REVIEW → PUBLISHED)
+  @PostMapping("/{lectureId}/approve")
+  public LectureStatusChangeResponse approveLecture(
+      @RequestHeader("X-User-Id") UUID userId,
+      @RequestHeader(value = "X-User-Role") String userRole,
+      @PathVariable UUID lectureId) {
+
+    LectureStatusChangeResult result =
+        lectureService.approveLecture(new LectureApproveCommand(lectureId, userId, userRole));
+
+    return LectureStatusChangeResponse.from(result);
+  }
+
+  // 관리자: 반려 (PENDING_REVIEW → DRAFT)
+  @PostMapping("/{lectureId}/reject")
+  public LectureStatusChangeResponse rejectLecture(
+      @RequestHeader("X-User-Id") UUID userId,
+      @RequestHeader(value = "X-User-Role") String userRole,
+      @PathVariable UUID lectureId,
+      @Valid @RequestBody LectureRejectRequest request) {
+
+    LectureStatusChangeResult result =
+        lectureService.rejectLecture(request.toCommand(lectureId, userId, userRole));
+
+    return LectureStatusChangeResponse.from(result);
+  }
+
+  // 관리자: 숨김 (PUBLISHED → HIDDEN)
+  @PostMapping("/{lectureId}/hide")
+  public LectureStatusChangeResponse hideLecture(
+      @RequestHeader("X-User-Id") UUID userId,
+      @RequestHeader(value = "X-User-Role") String userRole,
+      @PathVariable UUID lectureId) {
+
+    LectureStatusChangeResult result =
+        lectureService.hideLecture(new LectureHideCommand(lectureId, userId, userRole));
+
+    return LectureStatusChangeResponse.from(result);
   }
 
   // 강의 삭제 (DRAFT 상태에서만, 강사 본인 또는 MASTER, soft delete)
