@@ -29,5 +29,8 @@ public record LectureUpdateCommand(
     if (price == null) {
       throw new InvalidLectureFieldException(LectureErrorCode.PRICE_REQUIRED);
     }
+    if (durationPolicy == null) {
+      throw new InvalidLectureFieldException(LectureErrorCode.LECTURE_DURATION_POLICY_REQUIRED);
+    }
   }
 }

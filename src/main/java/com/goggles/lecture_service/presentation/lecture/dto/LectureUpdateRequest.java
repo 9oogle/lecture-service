@@ -14,7 +14,7 @@ public record LectureUpdateRequest(
     @NotBlank(message = "제목은 필수입니다.") @Size(max = 200, message = "제목은 200자 이하여야 합니다.") String title,
     @Size(max = 300, message = "부제는 300자 이하여야 합니다.") String subtitle,
     String description,
-    DurationPolicy durationPolicy,
+    @NotNull(message = "수강 기간 정책은 필수입니다.") DurationPolicy durationPolicy,
     @NotNull(message = "가격은 필수입니다.") @Min(value = 0, message = "가격은 0원 이상이어야 합니다.") Long price) {
 
   public LectureUpdateCommand toCommand(UUID lectureId, UUID actorId, String actorRole) {

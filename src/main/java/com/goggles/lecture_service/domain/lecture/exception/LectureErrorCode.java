@@ -22,6 +22,7 @@ public enum LectureErrorCode {
   // 요청 필드 검증
   USER_ID_REQUIRED("사용자 ID는 필수입니다."),
   USER_ROLE_REQUIRED("사용자 권한은 필수입니다."),
+  LECTURE_DURATION_POLICY_REQUIRED("수강 기간 정책은 필수입니다."),
 
   // 챕터
   CHAPTER_NOT_FOUND("해당 챕터를 찾을 수 없습니다."),

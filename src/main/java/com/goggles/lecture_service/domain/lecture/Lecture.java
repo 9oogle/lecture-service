@@ -163,6 +163,9 @@ public class Lecture extends BaseAudit {
 
   // 도메인 메서드 (삭제)
   public void delete(UUID deletedBy) {
+    if (deletedBy == null) {
+      throw new InvalidLectureFieldException(LectureErrorCode.USER_ID_REQUIRED);
+    }
     validateDraftStatus();
     softDelete(deletedBy);
   }
