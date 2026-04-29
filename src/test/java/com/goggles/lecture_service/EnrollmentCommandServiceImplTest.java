@@ -166,6 +166,25 @@ class EnrollmentCommandServiceImplTest {
           .extracting("reason")
           .isEqualTo(ReserveFailReason.DUPLICATE_ENROLLMENT);
     }
+
+    @Test
+    @DisplayName("실패: 강의 일부만 조회되면 전체 실패")
+    void reserve_partialLectureMissing_throws() {
+      Lecture lecture = publishedLecture();
+      UUID missing = UUID.randomUUID();
+
+      List<UUID> productIds = List.of(lecture.getId(), missing);
+
+      when(lectureRepository.findAllByIdIn(productIds)).thenReturn(List.of(lecture)); // 일부만 반환
+
+      assertThatThrownBy(
+              () -> service.reserve(new LectureEnrollmentReserveCommand(productIds, userId)))
+          .isInstanceOf(EnrollmentReserveFailedException.class)
+          .extracting("reason")
+          .isEqualTo(ReserveFailReason.LECTURE_NOT_FOUND);
+
+      verify(enrollmentRepository, never()).save(any());
+    }
   }
 
   // --- 헬퍼: 테스트용 Lecture 생성 ---
@@ -263,25 +282,6 @@ class EnrollmentCommandServiceImplTest {
                   service.cancel(
                       new LectureEnrollmentCancelCommand(List.of(enrollment.getId()), userId)))
           .isInstanceOf(InvalidEnrollmentStatusException.class);
-    }
-
-    @Test
-    @DisplayName("실패: 강의 일부만 조회되면 전체 실패")
-    void reserve_partialLectureMissing_throws() {
-      Lecture lecture = publishedLecture();
-      UUID missing = UUID.randomUUID();
-
-      List<UUID> productIds = List.of(lecture.getId(), missing);
-
-      when(lectureRepository.findAllByIdIn(productIds)).thenReturn(List.of(lecture)); // 일부만 반환
-
-      assertThatThrownBy(
-              () -> service.reserve(new LectureEnrollmentReserveCommand(productIds, userId)))
-          .isInstanceOf(EnrollmentReserveFailedException.class)
-          .extracting("reason")
-          .isEqualTo(ReserveFailReason.LECTURE_NOT_FOUND);
-
-      verify(enrollmentRepository, never()).save(any());
     }
 
     // 헬퍼
