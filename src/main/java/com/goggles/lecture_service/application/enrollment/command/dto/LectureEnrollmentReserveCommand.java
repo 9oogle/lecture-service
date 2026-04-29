@@ -5,7 +5,7 @@ import com.goggles.lecture_service.domain.enrollment.exception.InvalidEnrollment
 import java.util.List;
 import java.util.UUID;
 
-public record LectureEnrollmentReserveCommand(List<UUID> productIds, UUID userId, String userName) {
+public record LectureEnrollmentReserveCommand(List<UUID> productIds, UUID userId) {
 
   public LectureEnrollmentReserveCommand {
     if (productIds == null) {
@@ -17,9 +17,6 @@ public record LectureEnrollmentReserveCommand(List<UUID> productIds, UUID userId
     }
     if (userId == null) {
       throw new InvalidEnrollmentFieldException(EnrollmentErrorCode.ENROLLMENT_USER_ID_REQUIRED);
-    }
-    if (userName == null || userName.isBlank()) {
-      throw new InvalidEnrollmentFieldException(EnrollmentErrorCode.ENROLLMENT_USER_NAME_REQUIRED);
     }
 
     productIds = List.copyOf(productIds);

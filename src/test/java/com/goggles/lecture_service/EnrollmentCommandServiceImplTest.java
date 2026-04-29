@@ -64,8 +64,7 @@ class EnrollmentCommandServiceImplTest {
       when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
 
       List<LectureEnrollmentReserveResult> results =
-          service.reserve(
-              new LectureEnrollmentReserveCommand(List.of(lecture.getId()), userId, userName));
+          service.reserve(new LectureEnrollmentReserveCommand(List.of(lecture.getId()), userId));
 
       assertThat(results).hasSize(1);
       assertThat(results.get(0).productId()).isEqualTo(lecture.getId());
@@ -87,7 +86,7 @@ class EnrollmentCommandServiceImplTest {
       when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
 
       List<LectureEnrollmentReserveResult> results =
-          service.reserve(new LectureEnrollmentReserveCommand(productIds, userId, userName));
+          service.reserve(new LectureEnrollmentReserveCommand(productIds, userId));
 
       assertThat(results).hasSize(2);
       assertThat(results)
@@ -99,7 +98,7 @@ class EnrollmentCommandServiceImplTest {
     @Test
     @DisplayName("실패: productIds가 비어 있으면 예외")
     void reserve_emptyProductIds_throws() {
-      assertThatThrownBy(() -> new LectureEnrollmentReserveCommand(List.of(), userId, userName))
+      assertThatThrownBy(() -> new LectureEnrollmentReserveCommand(List.of(), userId))
           .isInstanceOf(InvalidEnrollmentFieldException.class);
     }
 
@@ -115,9 +114,7 @@ class EnrollmentCommandServiceImplTest {
           .thenReturn(false);
 
       assertThatThrownBy(
-              () ->
-                  service.reserve(
-                      new LectureEnrollmentReserveCommand(productIds, userId, userName)))
+              () -> service.reserve(new LectureEnrollmentReserveCommand(productIds, userId)))
           .isInstanceOf(EnrollmentReserveFailedException.class)
           .extracting("reason")
           .isEqualTo(ReserveFailReason.NOT_PUBLISHED);
@@ -132,9 +129,7 @@ class EnrollmentCommandServiceImplTest {
       when(lectureRepository.findAllByIdIn(List.of(missing))).thenReturn(List.of());
 
       assertThatThrownBy(
-              () ->
-                  service.reserve(
-                      new LectureEnrollmentReserveCommand(List.of(missing), userId, userName)))
+              () -> service.reserve(new LectureEnrollmentReserveCommand(List.of(missing), userId)))
           .isInstanceOf(EnrollmentReserveFailedException.class)
           .extracting("reason")
           .isEqualTo(ReserveFailReason.LECTURE_NOT_FOUND);
@@ -149,8 +144,7 @@ class EnrollmentCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   service.reserve(
-                      new LectureEnrollmentReserveCommand(
-                          List.of(draft.getId()), userId, userName)))
+                      new LectureEnrollmentReserveCommand(List.of(draft.getId()), userId)))
           .isInstanceOf(EnrollmentReserveFailedException.class)
           .extracting("reason")
           .isEqualTo(ReserveFailReason.NOT_PUBLISHED);
@@ -167,8 +161,7 @@ class EnrollmentCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   service.reserve(
-                      new LectureEnrollmentReserveCommand(
-                          List.of(lecture.getId()), userId, userName)))
+                      new LectureEnrollmentReserveCommand(List.of(lecture.getId()), userId)))
           .isInstanceOf(EnrollmentReserveFailedException.class)
           .extracting("reason")
           .isEqualTo(ReserveFailReason.DUPLICATE_ENROLLMENT);
@@ -283,9 +276,7 @@ class EnrollmentCommandServiceImplTest {
       when(lectureRepository.findAllByIdIn(productIds)).thenReturn(List.of(lecture)); // 일부만 반환
 
       assertThatThrownBy(
-              () ->
-                  service.reserve(
-                      new LectureEnrollmentReserveCommand(productIds, userId, userName)))
+              () -> service.reserve(new LectureEnrollmentReserveCommand(productIds, userId)))
           .isInstanceOf(EnrollmentReserveFailedException.class)
           .extracting("reason")
           .isEqualTo(ReserveFailReason.LECTURE_NOT_FOUND);
