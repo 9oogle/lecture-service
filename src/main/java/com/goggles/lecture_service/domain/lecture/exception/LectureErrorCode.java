@@ -15,6 +15,7 @@ public enum LectureErrorCode {
   LECTURE_CHAPTER_REQUIRED("챕터가 최소 1개 이상 있어야 합니다."),
   LECTURE_CATEGORY_REQUIRED("카테고리는 필수입니다."),
   LECTURE_REJECTION_REASON_REQUIRED("반려 사유는 필수입니다."),
+  LECTURE_REJECTION_REASON_TOO_LONG("반려 사유는 1000자 이하여야 합니다."),
   LECTURE_TITLE_REQUIRED("강의 제목은 필수입니다."),
   LECTURE_TITLE_TOO_LONG("강의 제목은 200자 이하여야 합니다."),
   LECTURE_SUBTITLE_TOO_LONG("강의 부제목은 300자 이하여야 합니다."),
