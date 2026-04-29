@@ -12,6 +12,8 @@ import com.goggles.lecture_service.application.lecture.command.dto.LectureCreate
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 import com.goggles.lecture_service.domain.lecture.Lecture;
@@ -100,6 +102,20 @@ public class LectureCommandServiceImpl implements LectureCommandService {
   }
 
   @Override
+  public LectureSubmitReviewResult submitReview(LectureSubmitReviewCommand command) {
+    Lecture lecture =
+        lectureRepository
+            .findById(command.lectureId())
+            .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
+
+    validateOwnership(lecture, command.actorId());
+
+    lecture.submitForReview();
+
+    return LectureSubmitReviewResult.from(lecture);
+  }
+
+  @Override
   public ChapterUpdateResult updateChapter(ChapterUpdateCommand command) {
     Lecture lecture =
         lectureRepository
@@ -155,6 +171,13 @@ public class LectureCommandServiceImpl implements LectureCommandService {
       return;
     }
     throw new LectureAccessDeniedException();
+  }
+
+  // 강의 소유자(강사)만 통과 (관리자는 승인 요청 불가)
+  private void validateOwnership(Lecture lecture, UUID actorId) {
+    if (!lecture.isOwnedBy(actorId)) {
+      throw new LectureAccessDeniedException();
+    }
   }
 
   private boolean isAdmin(String actorRole) {
