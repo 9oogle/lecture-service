@@ -26,8 +26,13 @@ public enum LectureErrorCode {
 
   // 챕터
   CHAPTER_NOT_FOUND("해당 챕터를 찾을 수 없습니다."),
+  CHAPTER_ID_REQUIRED("챕터 ID는 필수입니다."),
   CHAPTER_DUPLICATE_SORT_ORDER("이미 존재하는 챕터 순서입니다."),
   CHAPTER_INVALID_SORT_ORDER("챕터 순서는 1 이상이어야 합니다."),
+  CHAPTER_REORDER_ITEMS_REQUIRED("챕터 순서 변경 목록은 필수입니다."),
+  CHAPTER_REORDER_ITEMS_EMPTY("챕터 순서 변경 목록은 비어 있을 수 없습니다."),
+  CHAPTER_SORT_ORDER_REQUIRED("챕터 순서는 필수입니다."),
+  CHAPTER_ID_DUPLICATED("챕터 ID가 중복될 수 없습니다."),
   CHAPTER_TITLE_REQUIRED("챕터 제목은 필수입니다."),
   CHAPTER_TITLE_TOO_LONG("챕터 제목은 200자 이하여야 합니다."),
   CHAPTER_DURATION_INVALID("영상 길이는 1 이상이어야 합니다."),

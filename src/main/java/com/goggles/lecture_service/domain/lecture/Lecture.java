@@ -20,9 +20,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -119,16 +120,69 @@ public class Lecture extends BaseAudit {
     }
   }
 
-  public void reorderChapter(UUID chapterId, int newSortOrder) {
+  // 챕터 수정 (DRAFT 상태에서만, 순서는 변경하지 않음)
+  public void updateChapter(UUID chapterId, String title, String content, int durationSeconds) {
     validateDraftStatus();
+
     Chapter target = findChapterById(chapterId);
-    if (target.getSortOrder() == newSortOrder) return;
-    validateDuplicateSortOrder(newSortOrder);
-    target.updateSortOrder(newSortOrder);
+
+    target.updateContent(new ChapterContent(title, content));
+    target.updateDuration(new ChapterDuration(durationSeconds));
   }
 
-  public List<Chapter> getChapters() {
-    return Collections.unmodifiableList(chapters);
+  // 챕터 일괄 순서 변경 (DRAFT 상태에서만) 변경 후 sortOrder가 강의 전체 챕터 안에서 중복되면 throw
+  public void reorderChapters(Map<UUID, Integer> chapterOrders) {
+    validateDraftStatus();
+
+    Map<UUID, Chapter> chapterMap =
+        chapters.stream().collect(Collectors.toMap(Chapter::getId, chapter -> chapter));
+
+    // 1. 모든 chapterId 이 강의의 챕터인지 검증
+    for (UUID chapterId : chapterOrders.keySet()) {
+      if (!chapterMap.containsKey(chapterId)) {
+        throw new ChapterNotFoundException(chapterId);
+      }
+    }
+
+    // 2. 변경 후 최종 sortOrder 중복 확인
+    Map<UUID, Integer> finalSortOrders =
+        chapters.stream().collect(Collectors.toMap(Chapter::getId, Chapter::getSortOrder));
+    chapterOrders.forEach(finalSortOrders::put);
+
+    Integer duplicatedSortOrder =
+        finalSortOrders.values().stream()
+            .collect(Collectors.groupingBy(sortOrder -> sortOrder, Collectors.counting()))
+            .entrySet()
+            .stream()
+            .filter(entry -> entry.getValue() > 1)
+            .map(Map.Entry::getKey)
+            .findFirst()
+            .orElse(null);
+
+    if (duplicatedSortOrder != null) {
+      throw new DuplicateSortOrderException(duplicatedSortOrder);
+    }
+
+    // 3) 적용
+    chapterOrders.forEach(
+        (chapterId, sortOrder) -> chapterMap.get(chapterId).updateSortOrder(sortOrder));
+  }
+
+  public List<ChapterView> getChapterViews() {
+    return chapters.stream()
+        .map(
+            chapter ->
+                new ChapterView(
+                    chapter.getId(),
+                    chapter.getContent().getTitle(),
+                    chapter.getContent().getContent(),
+                    chapter.getSortOrder(),
+                    chapter.getDuration().getSeconds()))
+        .toList();
+  }
+
+  public int getChapterCount() {
+    return chapters.size();
   }
 
   // 도메인 메서드 (정보 수정)
