@@ -33,6 +33,6 @@ public record LectureDetail(
         lecture.getDurationPolicy(),
         lecture.getStatus(),
         lecture.getRejectionReason(),
-        lecture.getChapters().stream().map(ChapterDetail::from).toList());
+        lecture.getChapterViews().stream().map(ChapterDetail::from).toList());
   }
 }
