@@ -8,18 +8,17 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorde
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderResult;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureApproveCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureHideCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureRejectCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 import com.goggles.lecture_service.domain.lecture.Lecture;
+import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureStatusException;
 import com.goggles.lecture_service.domain.lecture.exception.LectureAccessDeniedException;
 import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
@@ -119,7 +118,7 @@ public class LectureCommandServiceImpl implements LectureCommandService {
   }
 
   @Override
-  public LectureStatusChangeResult approveLecture(LectureApproveCommand command) {
+  public LectureStatusChangeResult changeStatus(LectureStatusChangeCommand command) {
     Lecture lecture =
         lectureRepository
             .findById(command.lectureId())
@@ -127,35 +126,12 @@ public class LectureCommandServiceImpl implements LectureCommandService {
 
     validateAdmin(command.actorRole());
 
-    lecture.approve();
-
-    return LectureStatusChangeResult.from(lecture);
-  }
-
-  @Override
-  public LectureStatusChangeResult rejectLecture(LectureRejectCommand command) {
-    Lecture lecture =
-        lectureRepository
-            .findById(command.lectureId())
-            .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
-
-    validateAdmin(command.actorRole());
-
-    lecture.reject(command.reason());
-
-    return LectureStatusChangeResult.from(lecture);
-  }
-
-  @Override
-  public LectureStatusChangeResult hideLecture(LectureHideCommand command) {
-    Lecture lecture =
-        lectureRepository
-            .findById(command.lectureId())
-            .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
-
-    validateAdmin(command.actorRole());
-
-    lecture.hide();
+    switch (command.status()) {
+      case PUBLISHED -> lecture.approve();
+      case DRAFT -> lecture.reject(command.rejectionReason());
+      case HIDDEN -> lecture.hide();
+      default -> throw new InvalidLectureStatusException(command.lectureId(), command.status());
+    }
 
     return LectureStatusChangeResult.from(lecture);
   }

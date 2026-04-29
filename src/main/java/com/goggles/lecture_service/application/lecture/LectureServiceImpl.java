@@ -10,13 +10,11 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorde
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderResult;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureApproveCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureHideCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureRejectCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
@@ -74,18 +72,8 @@ public class LectureServiceImpl implements LectureService {
   }
 
   @Override
-  public LectureStatusChangeResult approveLecture(LectureApproveCommand command) {
-    return lectureCommandService.approveLecture(command);
-  }
-
-  @Override
-  public LectureStatusChangeResult rejectLecture(LectureRejectCommand command) {
-    return lectureCommandService.rejectLecture(command);
-  }
-
-  @Override
-  public LectureStatusChangeResult hideLecture(LectureHideCommand command) {
-    return lectureCommandService.hideLecture(command);
+  public LectureStatusChangeResult changeStatus(LectureStatusChangeCommand command) {
+    return lectureCommandService.changeStatus(command);
   }
 
   @Override

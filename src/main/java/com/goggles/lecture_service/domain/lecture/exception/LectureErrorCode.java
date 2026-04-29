@@ -14,6 +14,7 @@ public enum LectureErrorCode {
   LECTURE_INVALID_STATUS("현재 상태에서 허용되지 않는 작업입니다."),
   LECTURE_CHAPTER_REQUIRED("챕터가 최소 1개 이상 있어야 합니다."),
   LECTURE_CATEGORY_REQUIRED("카테고리는 필수입니다."),
+  LECTURE_STATUS_REQUIRED("변경할 강의 상태는 필수입니다."),
   LECTURE_REJECTION_REASON_REQUIRED("반려 사유는 필수입니다."),
   LECTURE_REJECTION_REASON_TOO_LONG("반려 사유는 1000자 이하여야 합니다."),
   LECTURE_TITLE_REQUIRED("강의 제목은 필수입니다."),

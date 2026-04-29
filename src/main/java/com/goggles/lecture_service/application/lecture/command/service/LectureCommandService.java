@@ -8,13 +8,11 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorde
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderResult;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureApproveCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureHideCommand;
-import com.goggles.lecture_service.application.lecture.command.dto.LectureRejectCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
@@ -31,11 +29,7 @@ public interface LectureCommandService {
 
   LectureStatusChangeResult submitReview(LectureSubmitReviewCommand command);
 
-  LectureStatusChangeResult approveLecture(LectureApproveCommand command);
-
-  LectureStatusChangeResult rejectLecture(LectureRejectCommand command);
-
-  LectureStatusChangeResult hideLecture(LectureHideCommand command);
+  LectureStatusChangeResult changeStatus(LectureStatusChangeCommand command);
 
   ChapterUpdateResult updateChapter(ChapterUpdateCommand command);
 
