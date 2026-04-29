@@ -69,7 +69,6 @@ public class Lecture extends BaseAudit {
 	private List<Chapter> chapters = new ArrayList<>();
 
 	// 정적 팩토리 메서드
-
 	public static Lecture create(
 		UUID instructorId,
 		String instructorName,
@@ -105,7 +104,6 @@ public class Lecture extends BaseAudit {
 	}
 
 	// 도메인 메서드 (챕터 관리)
-
 	public UUID addChapter(String title, String content, int sortOrder, int durationSeconds) {
 		validateDraftStatus();
 		validateDuplicateSortOrder(sortOrder);
@@ -141,7 +139,6 @@ public class Lecture extends BaseAudit {
 	}
 
 	// 도메인 메서드 (정보 수정)
-
 	public void updateMetadata(
 		String title,
 		String subtitle,
@@ -159,7 +156,6 @@ public class Lecture extends BaseAudit {
 	}
 
 	// 도메인 메서드 (상태 전이)
-
 	public void submitForReview() {
 		if (this.status != LectureStatus.DRAFT) {
 			throw new InvalidLectureStatusException(id, status);
@@ -170,6 +166,12 @@ public class Lecture extends BaseAudit {
 		this.status = LectureStatus.PENDING_REVIEW;
 		// 리뷰 재신청 시 이전 이유 삭제
 		this.rejectionReason = null;
+	}
+
+	// 도메인 메서드 (삭제)
+	public void delete(UUID deletedBy) {
+		validateDraftStatus();
+		softDelete(deletedBy);
 	}
 
 	public void approve() {
@@ -198,13 +200,20 @@ public class Lecture extends BaseAudit {
 		this.status = LectureStatus.HIDDEN;
 	}
 
+	// 도메인 메서드 (소유자 확인)
+	public boolean isOwnedBy(UUID userId) {
+		if (userId == null || this.instructor == null) {
+			return false;
+		}
+		return userId.equals(this.instructor.getInstructorId());
+	}
+
 	// 주문 가능 여부
 	public boolean isOrderable() {
 		return this.status == LectureStatus.PUBLISHED;
 	}
 
 	// 내부 검증 및 편의 메서드
-
 	private void validateDraftStatus() {
 		if (this.status != LectureStatus.DRAFT) {
 			throw new InvalidLectureStatusException(id, status);
