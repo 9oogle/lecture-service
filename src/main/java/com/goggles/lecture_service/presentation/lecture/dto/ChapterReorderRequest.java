@@ -13,16 +13,19 @@ public record ChapterReorderRequest(
         List<@Valid @NotNull ChapterOrderRequest> orders) {
 
   public ChapterReorderCommand toCommand(UUID lectureId, UUID actorId, String actorRole) {
-    return new ChapterReorderCommand(
-        lectureId,
-        actorId,
-        actorRole,
-        orders.stream()
-            .map(
-                order ->
-                    new ChapterReorderCommand.ChapterOrderCommand(
-                        order.chapterId(), order.sortOrder()))
-            .toList());
+    List<ChapterReorderCommand.ChapterOrderCommand> mappedOrders =
+        orders == null
+            ? null
+            : orders.stream()
+                .map(
+                    order ->
+                        order == null
+                            ? null
+                            : new ChapterReorderCommand.ChapterOrderCommand(
+                                order.chapterId(), order.sortOrder()))
+                .toList();
+
+    return new ChapterReorderCommand(lectureId, actorId, actorRole, mappedOrders);
   }
 
   public record ChapterOrderRequest(
