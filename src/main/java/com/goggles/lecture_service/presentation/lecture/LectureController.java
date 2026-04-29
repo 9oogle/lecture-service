@@ -93,7 +93,7 @@ public class LectureController {
   }
 
   // 강의 승인 요청 (강사 본인만, DRAFT → PENDING_REVIEW)
-  @PostMapping("/{lectureId}/review-requests")
+  @PatchMapping("/{lectureId}/review-requests")
   public LectureStatusChangeResponse submitReview(
       @RequestHeader("X-User-Id") UUID userId,
       @RequestHeader(value = "X-User-Role") String userRole,
@@ -106,7 +106,7 @@ public class LectureController {
   }
 
   // 관리자: 승인 (Status 변경)
-  @PostMapping("/{lectureId}/status")
+  @PatchMapping("/{lectureId}/status")
   public LectureStatusChangeResponse changeStatus(
       @RequestHeader("X-User-Id") UUID userId,
       @RequestHeader(value = "X-User-Role") String userRole,
