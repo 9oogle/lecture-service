@@ -8,10 +8,16 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorde
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderResult;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureApproveCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureApproveResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureHideCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureHideResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureRejectCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureRejectResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
@@ -116,6 +122,48 @@ public class LectureCommandServiceImpl implements LectureCommandService {
   }
 
   @Override
+  public LectureApproveResult approveLecture(LectureApproveCommand command) {
+    Lecture lecture =
+        lectureRepository
+            .findById(command.lectureId())
+            .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
+
+    validateAdmin(command.actorRole());
+
+    lecture.approve();
+
+    return LectureApproveResult.from(lecture);
+  }
+
+  @Override
+  public LectureRejectResult rejectLecture(LectureRejectCommand command) {
+    Lecture lecture =
+        lectureRepository
+            .findById(command.lectureId())
+            .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
+
+    validateAdmin(command.actorRole());
+
+    lecture.reject(command.reason());
+
+    return LectureRejectResult.from(lecture);
+  }
+
+  @Override
+  public LectureHideResult hideLecture(LectureHideCommand command) {
+    Lecture lecture =
+        lectureRepository
+            .findById(command.lectureId())
+            .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
+
+    validateAdmin(command.actorRole());
+
+    lecture.hide();
+
+    return LectureHideResult.from(lecture);
+  }
+
+  @Override
   public ChapterUpdateResult updateChapter(ChapterUpdateCommand command) {
     Lecture lecture =
         lectureRepository
@@ -176,6 +224,13 @@ public class LectureCommandServiceImpl implements LectureCommandService {
   // 강의 소유자(강사)만 통과 (관리자는 승인 요청 불가)
   private void validateOwnership(Lecture lecture, UUID actorId) {
     if (!lecture.isOwnedBy(actorId)) {
+      throw new LectureAccessDeniedException();
+    }
+  }
+
+  // 관리자(MASTER)만 통과
+  private void validateAdmin(String actorRole) {
+    if (!isAdmin(actorRole)) {
       throw new LectureAccessDeniedException();
     }
   }
