@@ -14,6 +14,8 @@ import com.goggles.lecture_service.application.lecture.command.dto.LectureCreate
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.service.LectureCommandService;
@@ -61,6 +63,11 @@ public class LectureServiceImpl implements LectureService {
   @Override
   public LectureDeleteResult deleteLecture(LectureDeleteCommand command) {
     return lectureCommandService.deleteLecture(command);
+  }
+
+  @Override
+  public LectureSubmitReviewResult submitReview(LectureSubmitReviewCommand command) {
+    return lectureCommandService.submitReview(command);
   }
 
   @Override
