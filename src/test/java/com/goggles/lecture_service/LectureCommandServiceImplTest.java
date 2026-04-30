@@ -16,6 +16,9 @@ import com.goggles.lecture_service.application.lecture.command.dto.LectureCreate
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.service.LectureCommandServiceImpl;
@@ -248,7 +251,7 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(() -> lectureCommandService.createChapter(chapterCommand))
           .isInstanceOf(InvalidLectureFieldException.class);
     }
-  } // 챕터 생성 끝
+  } //  생성 끝
 
   @Nested
   @DisplayName("강의 수정")
@@ -422,7 +425,283 @@ class LectureCommandServiceImplTest {
                       null))
           .isInstanceOf(InvalidLectureFieldException.class);
     }
-  }
+  } // 강의 수정 끝
+
+  @Nested
+  @DisplayName("강의 승인 요청")
+  class SubmitReview {
+
+    @Test
+    @DisplayName("성공: DRAFT 상태 강의를 소유자가 승인 요청 → PENDING_REVIEW")
+    void submitReview_byOwner_success() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLectureWithChapters(instructorId, 1); // 챕터 1개 이상
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      LectureStatusChangeResult result =
+          lectureCommandService.submitReview(
+              new LectureSubmitReviewCommand(lecture.getId(), instructorId, "INSTRUCTOR"));
+
+      assertThat(result.status()).isEqualTo(LectureStatus.PENDING_REVIEW);
+    }
+
+    @Test
+    @DisplayName("실패: 다른 강사가 승인 요청")
+    void submitReview_notOwner_throws() {
+      Lecture lecture = draftLectureWithChapters(UUID.randomUUID(), 1);
+      UUID otherInstructor = UUID.randomUUID();
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.submitReview(
+                      new LectureSubmitReviewCommand(
+                          lecture.getId(), otherInstructor, "INSTRUCTOR")))
+          .isInstanceOf(LectureAccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 관리자(MASTER)도 승인 요청 불가")
+    void submitReview_byMaster_throws() {
+      // 관리자도 본인 소유 강의가 아니면 승인 요청 못 함 (validateOwnership)
+      Lecture lecture = draftLectureWithChapters(UUID.randomUUID(), 1);
+      UUID master = UUID.randomUUID();
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.submitReview(
+                      new LectureSubmitReviewCommand(lecture.getId(), master, "MASTER")))
+          .isInstanceOf(LectureAccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("실패: DRAFT가 아닌 상태")
+    void submitReview_notDraft_throws() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = pendingReviewLecture(instructorId);
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.submitReview(
+                      new LectureSubmitReviewCommand(lecture.getId(), instructorId, "INSTRUCTOR")))
+          .isInstanceOf(InvalidLectureStatusException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 챕터 없음")
+    void submitReview_noChapters_throws() {
+      UUID instructorId = UUID.randomUUID();
+      Lecture lecture = draftLecture(instructorId); // 챕터 0개
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.submitReview(
+                      new LectureSubmitReviewCommand(lecture.getId(), instructorId, "INSTRUCTOR")))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 존재하지 않는 강의")
+    void submitReview_lectureNotFound_throws() {
+      UUID lectureId = UUID.randomUUID();
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.empty());
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.submitReview(
+                      new LectureSubmitReviewCommand(lectureId, UUID.randomUUID(), "INSTRUCTOR")))
+          .isInstanceOf(LectureNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("실패: Command 검증 - lectureId/actorId null, actorRole blank")
+    void submitReview_commandValidation_throws() {
+      assertThatThrownBy(
+              () -> new LectureSubmitReviewCommand(null, UUID.randomUUID(), "INSTRUCTOR"))
+          .isInstanceOf(InvalidLectureFieldException.class);
+
+      assertThatThrownBy(
+              () -> new LectureSubmitReviewCommand(UUID.randomUUID(), null, "INSTRUCTOR"))
+          .isInstanceOf(InvalidLectureFieldException.class);
+
+      assertThatThrownBy(
+              () -> new LectureSubmitReviewCommand(UUID.randomUUID(), UUID.randomUUID(), "  "))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+  } // 강의 요청 끝
+
+  @Nested
+  @DisplayName("관리자 강의 상태 변경")
+  class ChangeLectureStatus {
+
+    @Test
+    @DisplayName("성공: 관리자가 PENDING_REVIEW 강의를 승인 → PUBLISHED")
+    void changeStatus_toPublished_success() {
+      Lecture lecture = pendingReviewLecture(UUID.randomUUID());
+      UUID masterId = UUID.randomUUID();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      LectureStatusChangeResult result =
+          lectureCommandService.changeStatus(
+              new LectureStatusChangeCommand(
+                  lecture.getId(), masterId, "MASTER", LectureStatus.PUBLISHED, null));
+
+      assertThat(result.lectureId()).isEqualTo(lecture.getId());
+      assertThat(result.status()).isEqualTo(LectureStatus.PUBLISHED);
+      assertThat(lecture.getStatus()).isEqualTo(LectureStatus.PUBLISHED);
+      assertThat(lecture.getRejectionReason()).isNull();
+    }
+
+    @Test
+    @DisplayName("성공: 관리자가 PENDING_REVIEW 강의를 반려 → DRAFT")
+    void changeStatus_toDraft_success() {
+      Lecture lecture = pendingReviewLecture(UUID.randomUUID());
+      UUID masterId = UUID.randomUUID();
+      String reason = "강의 소개 내용 보완이 필요합니다.";
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      LectureStatusChangeResult result =
+          lectureCommandService.changeStatus(
+              new LectureStatusChangeCommand(
+                  lecture.getId(), masterId, "MASTER", LectureStatus.DRAFT, reason));
+
+      assertThat(result.lectureId()).isEqualTo(lecture.getId());
+      assertThat(result.status()).isEqualTo(LectureStatus.DRAFT);
+      assertThat(result.rejectionReason()).isEqualTo(reason);
+      assertThat(lecture.getStatus()).isEqualTo(LectureStatus.DRAFT);
+      assertThat(lecture.getRejectionReason()).isEqualTo(reason);
+    }
+
+    @Test
+    @DisplayName("성공: 관리자가 PUBLISHED 강의를 숨김 → HIDDEN")
+    void changeStatus_toHidden_success() {
+      Lecture lecture = publishedLecture(UUID.randomUUID());
+      UUID masterId = UUID.randomUUID();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      LectureStatusChangeResult result =
+          lectureCommandService.changeStatus(
+              new LectureStatusChangeCommand(
+                  lecture.getId(), masterId, "MASTER", LectureStatus.HIDDEN, null));
+
+      assertThat(result.lectureId()).isEqualTo(lecture.getId());
+      assertThat(result.status()).isEqualTo(LectureStatus.HIDDEN);
+      assertThat(lecture.getStatus()).isEqualTo(LectureStatus.HIDDEN);
+    }
+
+    @Test
+    @DisplayName("실패: INSTRUCTOR가 상태 변경 호출")
+    void changeStatus_byInstructor_throws() {
+      Lecture lecture = pendingReviewLecture(UUID.randomUUID());
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.changeStatus(
+                      new LectureStatusChangeCommand(
+                          lecture.getId(),
+                          UUID.randomUUID(),
+                          "INSTRUCTOR",
+                          LectureStatus.PUBLISHED,
+                          null)))
+          .isInstanceOf(LectureAccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 존재하지 않는 강의")
+    void changeStatus_lectureNotFound_throws() {
+      UUID lectureId = UUID.randomUUID();
+
+      when(lectureRepository.findById(lectureId)).thenReturn(Optional.empty());
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.changeStatus(
+                      new LectureStatusChangeCommand(
+                          lectureId, UUID.randomUUID(), "MASTER", LectureStatus.PUBLISHED, null)))
+          .isInstanceOf(LectureNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("실패: PENDING_REVIEW가 아닌 강의를 승인")
+    void changeStatus_approveNotPendingReview_throws() {
+      Lecture lecture = draftLecture(UUID.randomUUID());
+      UUID masterId = UUID.randomUUID();
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.changeStatus(
+                      new LectureStatusChangeCommand(
+                          lecture.getId(), masterId, "MASTER", LectureStatus.PUBLISHED, null)))
+          .isInstanceOf(InvalidLectureStatusException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 반려 시 rejectionReason 없음")
+    void changeStatus_rejectWithoutReason_throws() {
+      assertThatThrownBy(
+              () ->
+                  new LectureStatusChangeCommand(
+                      UUID.randomUUID(), UUID.randomUUID(), "MASTER", LectureStatus.DRAFT, "  "))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+
+    @Test
+    @DisplayName("실패: 허용하지 않는 상태로 변경 요청")
+    void changeStatus_invalidTargetStatus_throws() {
+      Lecture lecture = draftLecture(UUID.randomUUID());
+
+      when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
+
+      assertThatThrownBy(
+              () ->
+                  lectureCommandService.changeStatus(
+                      new LectureStatusChangeCommand(
+                          lecture.getId(),
+                          UUID.randomUUID(),
+                          "MASTER",
+                          LectureStatus.PENDING_REVIEW,
+                          null)))
+          .isInstanceOf(InvalidLectureStatusException.class);
+    }
+
+    @Test
+    @DisplayName("실패: Command 검증")
+    void changeStatus_commandValidation_throws() {
+      assertThatThrownBy(
+              () ->
+                  new LectureStatusChangeCommand(
+                      null, UUID.randomUUID(), "MASTER", LectureStatus.PUBLISHED, null))
+          .isInstanceOf(InvalidLectureFieldException.class);
+
+      assertThatThrownBy(
+              () ->
+                  new LectureStatusChangeCommand(
+                      UUID.randomUUID(), null, "MASTER", LectureStatus.PUBLISHED, null))
+          .isInstanceOf(InvalidLectureFieldException.class);
+
+      assertThatThrownBy(
+              () ->
+                  new LectureStatusChangeCommand(
+                      UUID.randomUUID(), UUID.randomUUID(), "  ", LectureStatus.PUBLISHED, null))
+          .isInstanceOf(InvalidLectureFieldException.class);
+
+      assertThatThrownBy(
+              () ->
+                  new LectureStatusChangeCommand(
+                      UUID.randomUUID(), UUID.randomUUID(), "MASTER", null, null))
+          .isInstanceOf(InvalidLectureFieldException.class);
+    }
+  } // 관리자 강의 상태 변경 끝
 
   @Nested
   @DisplayName("강의 삭제")
@@ -933,6 +1212,13 @@ class LectureCommandServiceImplTest {
   private Lecture draftLecture(UUID instructorId) {
     return Lecture.create(
         instructorId, "강사명", "BACKEND", "스프링 강의", "부제", "설명", DurationPolicy.DAYS_365, 10000L);
+  }
+
+  private Lecture pendingReviewLecture(UUID instructorId) {
+    Lecture lecture = draftLecture(instructorId);
+    lecture.addChapter("챕터1", "내용", 1, 600);
+    lecture.submitForReview();
+    return lecture;
   }
 
   private Lecture publishedLecture(UUID instructorId) {

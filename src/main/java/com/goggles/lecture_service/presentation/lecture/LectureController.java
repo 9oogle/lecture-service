@@ -10,6 +10,8 @@ import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorde
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureDetail;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureListQuery;
@@ -24,6 +26,8 @@ import com.goggles.lecture_service.presentation.lecture.dto.ChapterUpdateRespons
 import com.goggles.lecture_service.presentation.lecture.dto.LectureCreateRequest;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureCreateResponse;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureDeleteResponse;
+import com.goggles.lecture_service.presentation.lecture.dto.LectureStatusChangeRequest;
+import com.goggles.lecture_service.presentation.lecture.dto.LectureStatusChangeResponse;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureUpdateRequest;
 import com.goggles.lecture_service.presentation.lecture.dto.LectureUpdateResponse;
 import jakarta.validation.Valid;
@@ -86,6 +90,33 @@ public class LectureController {
         lectureService.updateLecture(request.toCommand(lectureId, userId, userRole));
 
     return LectureUpdateResponse.from(result);
+  }
+
+  // 강의 승인 요청 (강사 본인만, DRAFT → PENDING_REVIEW)
+  @PatchMapping("/{lectureId}/review-requests")
+  public LectureStatusChangeResponse submitReview(
+      @RequestHeader("X-User-Id") UUID userId,
+      @RequestHeader(value = "X-User-Role") String userRole,
+      @PathVariable UUID lectureId) {
+
+    LectureStatusChangeResult result =
+        lectureService.submitReview(new LectureSubmitReviewCommand(lectureId, userId, userRole));
+
+    return LectureStatusChangeResponse.from(result);
+  }
+
+  // 관리자: 승인 (Status 변경)
+  @PatchMapping("/{lectureId}/status")
+  public LectureStatusChangeResponse changeStatus(
+      @RequestHeader("X-User-Id") UUID userId,
+      @RequestHeader(value = "X-User-Role") String userRole,
+      @PathVariable UUID lectureId,
+      @Valid @RequestBody LectureStatusChangeRequest request) {
+
+    LectureStatusChangeResult result =
+        lectureService.changeStatus(request.toCommand(lectureId, userId, userRole));
+
+    return LectureStatusChangeResponse.from(result);
   }
 
   // 강의 삭제 (DRAFT 상태에서만, 강사 본인 또는 MASTER, soft delete)
