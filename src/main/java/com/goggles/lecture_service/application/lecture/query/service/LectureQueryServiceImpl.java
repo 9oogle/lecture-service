@@ -10,6 +10,7 @@ import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
 import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
 import com.goggles.lecture_service.domain.lecture.repository.LectureQueryRepository;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -41,5 +42,12 @@ public class LectureQueryServiceImpl implements LectureQueryService {
             .orElseThrow(() -> new LectureNotFoundException(lectureId));
 
     return LectureDetail.from(lecture);
+  }
+
+  @Override
+  public List<LectureSummary> getTeachingLectures(UUID instructorId) {
+    return lectureRepository.findAllByInstructorId(instructorId).stream()
+        .map(LectureSummary::from)
+        .toList();
   }
 }

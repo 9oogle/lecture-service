@@ -24,6 +24,7 @@ import com.goggles.lecture_service.application.lecture.query.dto.LectureDetail;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureSummary;
 import com.goggles.lecture_service.application.lecture.query.service.LectureQueryService;
 import com.goggles.lecture_service.domain.lecture.LectureSearchCondition;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -74,6 +75,11 @@ public class LectureServiceImpl implements LectureService {
   @Override
   public LectureStatusChangeResult changeStatus(LectureStatusChangeCommand command) {
     return lectureCommandService.changeStatus(command);
+  }
+
+  @Override
+  public List<LectureSummary> getTeachingLectures(UUID instructorId) {
+    return lectureQueryService.getTeachingLectures(instructorId);
   }
 
   @Override

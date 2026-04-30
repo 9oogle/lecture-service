@@ -22,6 +22,7 @@ import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdate
 import com.goggles.lecture_service.application.lecture.query.dto.LectureDetail;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureSummary;
 import com.goggles.lecture_service.domain.lecture.LectureSearchCondition;
+import java.util.List;
 import java.util.UUID;
 
 public interface LectureService {
@@ -42,6 +43,8 @@ public interface LectureService {
   LectureStatusChangeResult submitReview(LectureSubmitReviewCommand command);
 
   LectureStatusChangeResult changeStatus(LectureStatusChangeCommand command);
+
+  List<LectureSummary> getTeachingLectures(UUID instructorId);
 
   ChapterUpdateResult updateChapter(ChapterUpdateCommand command);
 
