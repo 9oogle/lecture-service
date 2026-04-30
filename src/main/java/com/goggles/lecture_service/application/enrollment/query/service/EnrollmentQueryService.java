@@ -1,10 +1,10 @@
 package com.goggles.lecture_service.application.enrollment.query.service;
 
-import com.goggles.lecture_service.application.enrollment.query.dto.EnrolledLectureSummary;
-import java.util.List;
-import java.util.UUID;
+import com.goggles.lecture_service.application.enrollment.query.dto.EnrolledLectureQuery;
+import com.goggles.lecture_service.application.enrollment.query.dto.EnrolledLectureResult;
+import org.springframework.data.domain.Page;
 
 public interface EnrollmentQueryService {
 
-  List<EnrolledLectureSummary> getEnrolledLectures(UUID studentId);
+  Page<EnrolledLectureResult> getEnrolledLectures(EnrolledLectureQuery query);
 }

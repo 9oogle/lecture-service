@@ -4,6 +4,7 @@ import com.goggles.lecture_service.domain.enrollment.Enrollment;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
 
 public interface EnrollmentRepository {
 
@@ -20,6 +21,5 @@ public interface EnrollmentRepository {
 
   List<Enrollment> findAllByOrderId(UUID orderId);
 
-  // 학생의 ACTIVE 한 enrollment(내 강의 화면)
-  List<Enrollment> findActiveByStudentId(UUID studentId);
+  Page<Enrollment> findEnrolledLectures(EnrolledLecturePageQuery query);
 }
