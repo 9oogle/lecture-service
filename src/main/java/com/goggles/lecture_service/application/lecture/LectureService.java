@@ -22,8 +22,8 @@ import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdate
 import com.goggles.lecture_service.application.lecture.query.dto.LectureDetail;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureSummary;
 import com.goggles.lecture_service.domain.lecture.LectureSearchCondition;
-import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
 
 public interface LectureService {
 
@@ -44,7 +44,7 @@ public interface LectureService {
 
   LectureStatusChangeResult changeStatus(LectureStatusChangeCommand command);
 
-  List<LectureSummary> getTeachingLectures(UUID instructorId);
+  Page<LectureSummary> getTeachingLectures(UUID instructorId, CommonPageRequest pageRequest);
 
   ChapterUpdateResult updateChapter(ChapterUpdateCommand command);
 

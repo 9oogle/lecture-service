@@ -5,8 +5,8 @@ import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureDetail;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureSummary;
 import com.goggles.lecture_service.domain.lecture.LectureSearchCondition;
-import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
 
 public interface LectureQueryService {
 
@@ -15,5 +15,5 @@ public interface LectureQueryService {
 
   LectureDetail getLectureDetail(UUID lectureId);
 
-  List<LectureSummary> getTeachingLectures(UUID instructorId);
+  Page<LectureSummary> getTeachingLectures(UUID instructorId, CommonPageRequest pageRequest);
 }

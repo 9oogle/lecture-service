@@ -10,9 +10,9 @@ import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
 import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
 import com.goggles.lecture_service.domain.lecture.repository.LectureQueryRepository;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +31,10 @@ public class LectureQueryServiceImpl implements LectureQueryService {
   @Override
   public CommonPageResponse<LectureSummary> getLectures(
       LectureSearchCondition condition, CommonPageRequest pageRequest) {
-    return lectureQueryRepository.findAllByCondition(condition, pageRequest, LectureSummary::from);
+
+    Page<Lecture> page = lectureQueryRepository.findAllByCondition(condition, pageRequest);
+
+    return CommonPageResponse.of(page, LectureSummary::from);
   }
 
   @Override
@@ -45,9 +48,12 @@ public class LectureQueryServiceImpl implements LectureQueryService {
   }
 
   @Override
-  public List<LectureSummary> getTeachingLectures(UUID instructorId) {
-    return lectureRepository.findAllByInstructorId(instructorId).stream()
-        .map(LectureSummary::from)
-        .toList();
+  public Page<LectureSummary> getTeachingLectures(
+      UUID instructorId, CommonPageRequest pageRequest) {
+
+    Page<Lecture> lectures =
+        lectureQueryRepository.findAllByInstructorId(instructorId, pageRequest);
+
+    return lectures.map(LectureSummary::from);
   }
 }
