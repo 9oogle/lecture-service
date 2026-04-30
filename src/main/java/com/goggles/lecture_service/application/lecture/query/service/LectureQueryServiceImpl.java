@@ -12,7 +12,6 @@ import com.goggles.lecture_service.domain.lecture.repository.LectureQueryReposit
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,17 +23,10 @@ public class LectureQueryServiceImpl implements LectureQueryService {
   private final LectureRepository lectureRepository;
   private final LectureQueryRepository lectureQueryRepository;
 
-  /*
-   * TODO: common-library의 CommonPageResponse 에 map(Function) 메서드가 추가되면
-   */
-
   @Override
   public CommonPageResponse<LectureSummary> getLectures(
       LectureSearchCondition condition, CommonPageRequest pageRequest) {
-
-    Page<Lecture> page = lectureQueryRepository.findAllByCondition(condition, pageRequest);
-
-    return CommonPageResponse.of(page, LectureSummary::from);
+    return lectureQueryRepository.findAllByCondition(condition, pageRequest, LectureSummary::from);
   }
 
   @Override
@@ -48,12 +40,9 @@ public class LectureQueryServiceImpl implements LectureQueryService {
   }
 
   @Override
-  public Page<LectureSummary> getTeachingLectures(
+  public CommonPageResponse<LectureSummary> getTeachingLectures(
       UUID instructorId, CommonPageRequest pageRequest) {
-
-    Page<Lecture> lectures =
-        lectureQueryRepository.findAllByInstructorId(instructorId, pageRequest);
-
-    return lectures.map(LectureSummary::from);
+    return lectureQueryRepository.findAllByInstructorId(
+        instructorId, pageRequest, LectureSummary::from);
   }
 }

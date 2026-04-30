@@ -1,10 +1,11 @@
 package com.goggles.lecture_service.domain.enrollment.repository;
 
+import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
+import java.util.function.Function;
 
 public interface EnrollmentRepository {
 
@@ -21,5 +22,6 @@ public interface EnrollmentRepository {
 
   List<Enrollment> findAllByOrderId(UUID orderId);
 
-  Page<Enrollment> findEnrolledLectures(EnrolledLecturePageQuery query);
+  <T> CommonPageResponse<T> findEnrolledLectures(
+      EnrolledLecturePageQuery query, Function<Enrollment, T> mapper);
 }

@@ -3,6 +3,7 @@ package com.goggles.lecture_service.infrastructure.lecture.repository;
 import static com.goggles.lecture_service.domain.lecture.QLecture.*;
 
 import com.goggles.common.pagination.CommonPageRequest;
+import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.LectureSearchCondition;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
@@ -12,6 +13,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -27,8 +29,10 @@ public class LectureQueryRepositoryImpl implements LectureQueryRepository {
   private final JPAQueryFactory queryFactory;
 
   @Override
-  public Page<Lecture> findAllByCondition(
-      LectureSearchCondition condition, CommonPageRequest pageRequest) {
+  public <T> CommonPageResponse<T> findAllByCondition(
+      LectureSearchCondition condition,
+      CommonPageRequest pageRequest,
+      Function<Lecture, T> mapper) {
 
     Pageable pageable = pageRequest.toPageable(Sort.by(Sort.Direction.DESC, "createdAt"));
 
@@ -60,11 +64,13 @@ public class LectureQueryRepositoryImpl implements LectureQueryRepository {
                 durationPolicyEq(condition.durationPolicy()))
             .fetchOne();
 
-    return new PageImpl<>(content, pageable, total != null ? total : 0L);
+    Page<Lecture> page = new PageImpl<>(content, pageable, total != null ? total : 0L);
+    return CommonPageResponse.of(page, mapper);
   }
 
   @Override
-  public Page<Lecture> findAllByInstructorId(UUID instructorId, CommonPageRequest pageRequest) {
+  public <T> CommonPageResponse<T> findAllByInstructorId(
+      UUID instructorId, CommonPageRequest pageRequest, Function<Lecture, T> mapper) {
 
     Pageable pageable = pageRequest.toPageable(Sort.by(Sort.Direction.DESC, "createdAt"));
 
@@ -84,7 +90,8 @@ public class LectureQueryRepositoryImpl implements LectureQueryRepository {
             .where(lecture.instructor.instructorId.eq(instructorId))
             .fetchOne();
 
-    return new PageImpl<>(content, pageable, total != null ? total : 0L);
+    Page<Lecture> page = new PageImpl<>(content, pageable, total != null ? total : 0L);
+    return CommonPageResponse.of(page, mapper);
   }
 
   // ── BooleanExpression (null 반환 시 where에서 자동 제외) ──

@@ -2,6 +2,7 @@ package com.goggles.lecture_service.infrastructure.enrollment.repository;
 
 import static com.goggles.lecture_service.domain.enrollment.QEnrollment.*;
 
+import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
 import com.goggles.lecture_service.domain.enrollment.enums.EnrolledLectureSort;
 import com.goggles.lecture_service.domain.enrollment.enums.EnrollmentStatus;
@@ -12,6 +13,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,7 +30,9 @@ public class EnrollmentQueryDslRepository {
 
   private final JPAQueryFactory queryFactory;
 
-  public Page<Enrollment> findEnrolledLectures(EnrolledLecturePageQuery query) {
+  public <T> CommonPageResponse<T> findEnrolledLectures(
+      EnrolledLecturePageQuery query, Function<Enrollment, T> mapper) {
+
     List<Enrollment> content =
         queryFactory
             .selectFrom(enrollment)
@@ -46,8 +50,8 @@ public class EnrollmentQueryDslRepository {
             .fetchOne();
 
     Pageable pageable = PageRequest.of(query.page(), query.size());
-
-    return new PageImpl<>(content, pageable, total != null ? total : 0);
+    Page<Enrollment> page = new PageImpl<>(content, pageable, total != null ? total : 0L);
+    return CommonPageResponse.of(page, mapper);
   }
 
   private BooleanExpression studentCondition(EnrolledLecturePageQuery query) {

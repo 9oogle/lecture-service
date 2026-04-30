@@ -26,7 +26,6 @@ import com.goggles.lecture_service.application.lecture.query.service.LectureQuer
 import com.goggles.lecture_service.domain.lecture.LectureSearchCondition;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -78,7 +77,7 @@ public class LectureServiceImpl implements LectureService {
   }
 
   @Override
-  public Page<LectureSummary> getTeachingLectures(
+  public CommonPageResponse<LectureSummary> getTeachingLectures(
       UUID instructorId, CommonPageRequest pageRequest) {
     return lectureQueryService.getTeachingLectures(instructorId, pageRequest);
   }

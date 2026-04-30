@@ -1,5 +1,6 @@
 package com.goggles.lecture_service.infrastructure.enrollment.repository;
 
+import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
 import com.goggles.lecture_service.domain.enrollment.enums.EnrollmentStatus;
 import com.goggles.lecture_service.domain.enrollment.repository.EnrolledLecturePageQuery;
@@ -9,8 +10,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -55,7 +56,8 @@ public class EnrollmentRepositoryImpl implements EnrollmentRepository {
   }
 
   @Override
-  public Page<Enrollment> findEnrolledLectures(EnrolledLecturePageQuery query) {
-    return queryDslRepository.findEnrolledLectures(query);
+  public <T> CommonPageResponse<T> findEnrolledLectures(
+      EnrolledLecturePageQuery query, Function<Enrollment, T> mapper) {
+    return queryDslRepository.findEnrolledLectures(query, mapper);
   }
 }
