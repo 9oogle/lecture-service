@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -27,7 +26,7 @@ public class OrderEnrollmentCompletionConsumer {
 
   @KafkaListener(topics = TOPIC, groupId = GROUP_NAME)
   @IdempotentConsumer(GROUP_NAME)
-  public void consume(ConsumerRecord<String, String> record, Acknowledgment ack) {
+  public void consume(ConsumerRecord<String, String> record) {
     log.info(
         "[Kafka] Received {} | partition={}, offset={}",
         TOPIC,
@@ -38,8 +37,6 @@ public class OrderEnrollmentCompletionConsumer {
 
     enrollmentCommandService.complete(
         new LectureEnrollmentCompleteCommand(event.orderId(), event.enrollmentIds()));
-
-    ack.acknowledge();
   }
 
   private OrderEnrollmentCompletionEvent parse(String value) {

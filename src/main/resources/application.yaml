@@ -51,6 +51,13 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
     tagsSorter: alpha
+kafka:
+  consumer:
+    enable-auto-commit: false
+    auto-offset-reset: earliest
 
+  listener:
+    missing-topics-fatal: false
+    ack-mode: record
 server:
   port: 9005
