@@ -2,6 +2,7 @@ spring:
   config:
     activate:
       on-profile: prod
+    import: configserver:${CONFIG_SERVER_URL}
 
   datasource:
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:goggles}
@@ -62,7 +63,7 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://${EUREKA_URL1}:9001/eureka/,http://${EUREKA_URL2}:9002/eureka/
+      defaultZone: ${EUREKA_DEFAULT_ZONE}
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
