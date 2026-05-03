@@ -120,7 +120,7 @@ docker compose ps
 
 기동 로그에서 보이면 정상:
 
-```
+```text
 Started LectureServiceApplication in X.XXX seconds
 HikariPool-1 - Start completed.
 [Consumer ...] Setting newly assigned partitions: order.enrollment.completion-0
@@ -132,7 +132,7 @@ HikariPool-1 - Start completed.
 
 본 서비스의 핵심 기능. 전체 흐름은 다음과 같다 :
 
-```
+```text
 [사용자] 결제 클릭
   └─▶ [주문 서비스] 구매자 검증 / 강의 등록 예약(RESERVE) / 할인 계산 / 주문 생성
         └─▶ [결제 서비스] 결제 처리 (Kafka 비동기)
@@ -230,13 +230,13 @@ CONFIG_SERVER_URL=http://<CONFIG_SERVER_HOST>:9000 \
 
 Config Server 에서 가져오는 키:
 
-```
-KAFKA_BOOTSTRAP_SERVERS = <KAFKA_1_INTERNAL_IP>:9092,<KAFKA_2_INTERNAL_IP>:9092,<KAFKA_3_INTERNAL_IP>:9092
-REDIS_SENTINEL_1/2/3    = <REDIS_VM_INTERNAL_IP>:26379
-REDIS_PASSWORD          = ****
+```properties
+KAFKA_BOOTSTRAP_SERVERS=<KAFKA_1_INTERNAL_IP>:9092,<KAFKA_2_INTERNAL_IP>:9092,<KAFKA_3_INTERNAL_IP>:9092
+REDIS_SENTINEL_1/2/3=<REDIS_VM_INTERNAL_IP>:26379
+REDIS_PASSWORD=****
 DB_HOST / DB_PORT / DB_NAME / DB_USERNAME / DB_PASSWORD
-EUREKA_DEFAULT_ZONE     = http://<EUREKA_VM_1>:9001/eureka/,http://<EUREKA_VM_2>:9002/eureka/
-MONITORING_HOST         = <MONITORING_VM_EXTERNAL_IP>
+EUREKA_DEFAULT_ZONE=http://<EUREKA_VM_1>:9001/eureka/,http://<EUREKA_VM_2>:9002/eureka/
+MONITORING_HOST=<MONITORING_VM_EXTERNAL_IP>
 ```
 
 > Prometheus 스크레이핑 대상으로 등록하려면 `monitoring-vm/.env` 와 `prometheus.yml.tmpl` 에 본 서비스 호스트(예:
@@ -246,7 +246,7 @@ MONITORING_HOST         = <MONITORING_VM_EXTERNAL_IP>
 
 ## 📂 프로젝트 구조
 
-```
+```text
 lecture-service/
 ├── docker-compose.yml          # 로컬 인프라 (postgres + redis + kafka + kafka-ui + zipkin)
 ├── init/                       # postgres 최초 기동 시 자동 실행

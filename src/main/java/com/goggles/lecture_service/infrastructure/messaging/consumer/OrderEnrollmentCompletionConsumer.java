@@ -6,6 +6,7 @@ import com.goggles.common.event.annotation.IdempotentConsumer;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentCompleteCommand;
 import com.goggles.lecture_service.application.enrollment.command.service.EnrollmentCommandService;
 import com.goggles.lecture_service.domain.enrollment.exception.InvalidEnrollmentCompletionEventPayloadException;
+import com.goggles.lecture_service.domain.enrollment.exception.InvalidEnrollmentFieldException;
 import com.goggles.lecture_service.infrastructure.messaging.event.OrderEnrollmentCompletionEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,17 +34,16 @@ public class OrderEnrollmentCompletionConsumer {
         record.partition(),
         record.offset());
 
-    OrderEnrollmentCompletionEvent event = parse(record.value());
-
-    enrollmentCommandService.complete(
-        new LectureEnrollmentCompleteCommand(event.orderId(), event.enrollmentIds()));
+    enrollmentCommandService.complete(toCommand(record.value()));
   }
 
-  private OrderEnrollmentCompletionEvent parse(String value) {
+  private LectureEnrollmentCompleteCommand toCommand(String value) {
     try {
-      return objectMapper.readValue(value, OrderEnrollmentCompletionEvent.class);
-    } catch (JsonProcessingException e) {
-      // payload 가 깨진 경우
+      OrderEnrollmentCompletionEvent event =
+          objectMapper.readValue(value, OrderEnrollmentCompletionEvent.class);
+      return new LectureEnrollmentCompleteCommand(event.orderId(), event.enrollmentIds());
+    } catch (JsonProcessingException | InvalidEnrollmentFieldException e) {
+      // payload 가 깨졌거나 필수 필드(orderId/enrollmentIds)가 누락된 경우
       throw new InvalidEnrollmentCompletionEventPayloadException();
     }
   }

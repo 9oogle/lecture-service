@@ -107,15 +107,19 @@ public class Enrollment extends BaseAudit {
     this.status = EnrollmentStatus.ACTIVE;
   }
 
-  public void complete() {
+  public void complete(LocalDateTime now, UUID orderId) {
+    validateNow(now);
+    validateOrderId(orderId);
     if (this.status == EnrollmentStatus.ACTIVE) {
-      return;
+      return; // 멱등 처리
     }
     if (this.status != EnrollmentStatus.RESERVE) {
       throw new InvalidEnrollmentStatusException(ENROLLMENT_INVALID_STATUS_FOR_ACTIVATE);
     }
+    this.orderId = orderId;
     this.status = EnrollmentStatus.ACTIVE;
-    this.activatedAt = LocalDateTime.now();
+    this.activatedAt = now;
+    this.expiresAt = calculateExpiresAt(now, this.durationPolicy);
   }
 
   public void cancel() {

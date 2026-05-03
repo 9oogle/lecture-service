@@ -701,7 +701,7 @@ ENROLLMENT_STATUS_NOT_SEARCHABLE
 
 | 증상                                              | 원인 / 해결                                                                                 |                             |
 |-------------------------------------------------|-----------------------------------------------------------------------------------------|-----------------------------|
-| `jq: command not found`                         | jq가 설치되지 않은 상태입니다. `winget install jqlang.jq`로 설치하거나 `                                  | jq ...`를 제거하고 응답 전체를 확인합니다. |
+ `jq: command not found`                         | jq가 설치되지 않은 상태입니다. `winget install jqlang.jq`로 설치하거나 `\| jq ...`를 제거하고 응답 전체를 확인합니다.    |                             | jq가 설치되지 않은 상태입니다. `winget install jqlang.jq`로 설치하거나 `                                  | jq ...`를 제거하고 응답 전체를 확인합니다. |
 | Git Bash에서 `>` 프롬프트가 뜸                          | 따옴표가 닫히지 않은 상태입니다. `Ctrl + C`로 빠져나온 뒤 명령어를 다시 입력합니다.                                    |                             |
 | init SQL이 실행되지 않음                               | 기존 DB 볼륨이 남아있는 상태입니다. `docker compose down -v` 후 다시 실행합니다.                              |                             |
 | `ddl-auto: validate`에서 부팅 실패                    | 엔티티와 init SQL이 불일치한 상태입니다. init SQL을 수정하거나 로컬에서 임시로 `ddl-auto: update`로 확인합니다.          |                             |
