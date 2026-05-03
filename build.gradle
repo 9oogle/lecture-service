@@ -46,6 +46,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    // Lettuce connection pool (Redis Sentinel HA)
+    implementation 'org.apache.commons:commons-pool2'
 
     // ── Spring Cloud ──────────────────────────────────────────────
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
@@ -60,6 +64,7 @@ dependencies {
     // ── 분산 추적 (Zipkin) ────────────────────────────────────────
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
     implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // ── API 문서 (Swagger) ────────────────────────────────────────
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.16'
@@ -73,6 +78,9 @@ dependencies {
     // ── Lombok ────────────────────────────────────────────────────
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // Prometheus 메트릭
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // ── DB ────────────────────────────────────────────────────────
     runtimeOnly 'org.postgresql:postgresql'
