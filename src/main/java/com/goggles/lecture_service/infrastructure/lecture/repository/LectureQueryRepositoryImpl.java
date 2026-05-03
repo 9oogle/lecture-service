@@ -12,6 +12,7 @@ import com.goggles.lecture_service.domain.lecture.repository.LectureQueryReposit
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,7 +36,6 @@ public class LectureQueryRepositoryImpl implements LectureQueryRepository {
 
     Pageable pageable = pageRequest.toPageable(Sort.by(Sort.Direction.DESC, "createdAt"));
 
-    // 1. 조건에 맞는 content 조회 (페이징 + 정렬 적용)
     List<Lecture> content =
         queryFactory
             .selectFrom(lecture)
@@ -51,7 +51,6 @@ public class LectureQueryRepositoryImpl implements LectureQueryRepository {
             .limit(pageable.getPageSize())
             .fetch();
 
-    // 2. 전체 건수 조회 (같은 조건)
     Long total =
         queryFactory
             .select(lecture.count())
@@ -65,7 +64,32 @@ public class LectureQueryRepositoryImpl implements LectureQueryRepository {
                 durationPolicyEq(condition.durationPolicy()))
             .fetchOne();
 
-    // 3. Page → CommonPageResponse 변환 + 매퍼 적용 (인프라 책임)
+    Page<Lecture> page = new PageImpl<>(content, pageable, total != null ? total : 0L);
+    return CommonPageResponse.of(page, mapper);
+  }
+
+  @Override
+  public <T> CommonPageResponse<T> findAllByInstructorId(
+      UUID instructorId, CommonPageRequest pageRequest, Function<Lecture, T> mapper) {
+
+    Pageable pageable = pageRequest.toPageable(Sort.by(Sort.Direction.DESC, "createdAt"));
+
+    List<Lecture> content =
+        queryFactory
+            .selectFrom(lecture)
+            .where(lecture.instructor.instructorId.eq(instructorId))
+            .orderBy(lecture.createdAt.desc())
+            .offset(pageable.getOffset())
+            .limit(pageable.getPageSize())
+            .fetch();
+
+    Long total =
+        queryFactory
+            .select(lecture.count())
+            .from(lecture)
+            .where(lecture.instructor.instructorId.eq(instructorId))
+            .fetchOne();
+
     Page<Lecture> page = new PageImpl<>(content, pageable, total != null ? total : 0L);
     return CommonPageResponse.of(page, mapper);
   }

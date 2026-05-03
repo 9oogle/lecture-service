@@ -49,7 +49,11 @@ public enum EnrollmentErrorCode {
   ENROLLMENT_PRODUCT_IDS_REQUIRED("상품 ID 목록은 필수입니다."),
   ENROLLMENT_PRODUCT_IDS_EMPTY("상품 ID 목록은 비어 있을 수 없습니다."),
   ENROLLMENT_USER_ID_REQUIRED("사용자 ID는 필수입니다."),
-  ENROLLMENT_USER_NAME_REQUIRED("사용자 이름은 필수입니다.");
+  ENROLLMENT_USER_NAME_REQUIRED("사용자 이름은 필수입니다."),
+  ENROLLMENT_PAGE_REQUEST_REQUIRED("페이지 요청 정보는 필수입니다."),
+  ENROLLMENT_SORT_INVALID("유효하지 않은 수강 강의 정렬 조건입니다."),
+  ENROLLMENT_STATUS_INVALID("유효하지 않은 수강 상태입니다."),
+  ENROLLMENT_STATUS_NOT_SEARCHABLE("내 강의 목록에서는 조회할 수 없는 수강 상태입니다.");
 
   private final String message;
 }

@@ -12,6 +12,9 @@ import com.goggles.lecture_service.application.lecture.command.dto.LectureCreate
 import com.goggles.lecture_service.application.lecture.command.dto.LectureCreateResult;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureDeleteResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeCommand;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureStatusChangeResult;
+import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 
@@ -23,6 +26,10 @@ public interface LectureCommandService {
   LectureUpdateResult updateLecture(LectureUpdateCommand command);
 
   LectureDeleteResult deleteLecture(LectureDeleteCommand command);
+
+  LectureStatusChangeResult submitReview(LectureSubmitReviewCommand command);
+
+  LectureStatusChangeResult changeStatus(LectureStatusChangeCommand command);
 
   ChapterUpdateResult updateChapter(ChapterUpdateCommand command);
 

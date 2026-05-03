@@ -23,10 +23,6 @@ public class LectureQueryServiceImpl implements LectureQueryService {
   private final LectureRepository lectureRepository;
   private final LectureQueryRepository lectureQueryRepository;
 
-  /*
-   * TODO: common-library의 CommonPageResponse 에 map(Function) 메서드가 추가되면
-   */
-
   @Override
   public CommonPageResponse<LectureSummary> getLectures(
       LectureSearchCondition condition, CommonPageRequest pageRequest) {
@@ -41,5 +37,12 @@ public class LectureQueryServiceImpl implements LectureQueryService {
             .orElseThrow(() -> new LectureNotFoundException(lectureId));
 
     return LectureDetail.from(lecture);
+  }
+
+  @Override
+  public CommonPageResponse<LectureSummary> getTeachingLectures(
+      UUID instructorId, CommonPageRequest pageRequest) {
+    return lectureQueryRepository.findAllByInstructorId(
+        instructorId, pageRequest, LectureSummary::from);
   }
 }
