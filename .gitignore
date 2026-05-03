@@ -23,7 +23,6 @@ logs/
 Thumbs.db
 
 # 환경 변수 파일 (절대 커밋 금지)
-.env
 .env.local
 .env.dev
 .env.prod
