@@ -550,11 +550,8 @@ docker exec -it goggles-postgres psql -U goggles -d goggles -c \
 
 학생B가 JPA 실전과 Spring Boot 완전 정복을 예약 수강 상태로 생성하는 흐름입니다.
 
-> 현재 컨트롤러 경로가 `/internal/v1/lectures-enrollment/reserve`인 경우 아래 명령어를 사용합니다.
-> 프로젝트에서 경로를 `/internal/v1/lectures-enrollment`로 확정했다면 URL만 맞춰 수정하세요.
-
 ```bash
-curl -s -X POST "http://localhost:9005/internal/v1/lectures-enrollment/reserve" \
+curl -s -X POST "http://localhost:9005/internal/v1/lectures-enrollment" \
   -H "Content-Type: application/json" \
   -H "X-User-Id: bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" \
   -H "X-User-Role: STUDENT" \
@@ -599,7 +596,7 @@ curl -s -X POST "http://localhost:9005/internal/v1/lectures-enrollment/reserve" 
 이미 ACTIVE 상태로 보유한 강의를 다시 예약하려고 하면 예외가 발생합니다.
 
 ```bash
-curl -s -X POST "http://localhost:9005/internal/v1/lectures-enrollment/reserve" \
+curl -s -X POST "http://localhost:9005/internal/v1/lectures-enrollment" \
   -H "Content-Type: application/json" \
   -H "X-User-Id: bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" \
   -H "X-User-Role: STUDENT" \
