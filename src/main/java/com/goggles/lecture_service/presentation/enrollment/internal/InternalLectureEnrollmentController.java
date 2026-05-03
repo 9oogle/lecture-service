@@ -24,7 +24,7 @@ public class InternalLectureEnrollmentController {
   private final EnrollmentCommandService enrollmentCommandService;
 
   // TODO: 권한 정책 확정 후 userRole 기반 내부 API 접근 제어 적용
-  @PostMapping("/reserve")
+  @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public List<LectureEnrollmentReserveResponse> reserve(
       @RequestHeader("X-User-Id") UUID userId,
