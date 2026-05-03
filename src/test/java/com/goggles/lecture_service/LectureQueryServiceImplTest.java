@@ -1,17 +1,23 @@
 package com.goggles.lecture_service;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.goggles.common.pagination.CommonPageRequest;
+import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureDetail;
+import com.goggles.lecture_service.application.lecture.query.dto.LectureSummary;
 import com.goggles.lecture_service.application.lecture.query.service.LectureQueryServiceImpl;
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
 import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
 import com.goggles.lecture_service.domain.lecture.exception.LectureNotFoundException;
+import com.goggles.lecture_service.domain.lecture.repository.LectureQueryRepository;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,6 +34,7 @@ class LectureQueryServiceImplTest {
   @InjectMocks private LectureQueryServiceImpl lectureQueryService;
 
   @Mock private LectureRepository lectureRepository;
+  @Mock private LectureQueryRepository lectureQueryRepository;
 
   private UUID lectureId;
   private Lecture lecture;
@@ -120,6 +127,34 @@ class LectureQueryServiceImplTest {
       assertThat(result.chapters().get(0).title()).isEqualTo("챕터1");
       assertThat(result.chapters().get(1).sortOrder()).isEqualTo(2);
       verify(lectureRepository, times(1)).findByIdAndStatus(lectureId, LectureStatus.PUBLISHED);
+    }
+  }
+
+  @Nested
+  @DisplayName("강사 본인 강의 목록 조회")
+  class GetTeachingLectures {
+
+    @Test
+    @DisplayName("성공: 강사 본인 강의 페이지 위임 호출")
+    @SuppressWarnings("unchecked")
+    void getTeachingLectures_success() {
+      // given
+      UUID instructorId = UUID.randomUUID();
+      CommonPageRequest pageRequest = CommonPageRequest.of(0, 10);
+      CommonPageResponse<LectureSummary> expected = mock(CommonPageResponse.class);
+
+      when(lectureQueryRepository.findAllByInstructorId(
+              eq(instructorId), eq(pageRequest), any(Function.class)))
+          .thenReturn(expected);
+
+      // when
+      CommonPageResponse<LectureSummary> result =
+          lectureQueryService.getTeachingLectures(instructorId, pageRequest);
+
+      // then
+      assertThat(result).isSameAs(expected);
+      verify(lectureQueryRepository, times(1))
+          .findAllByInstructorId(eq(instructorId), eq(pageRequest), any(Function.class));
     }
   }
 }

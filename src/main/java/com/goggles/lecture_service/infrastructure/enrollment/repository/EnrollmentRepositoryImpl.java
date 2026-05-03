@@ -1,13 +1,16 @@
 package com.goggles.lecture_service.infrastructure.enrollment.repository;
 
+import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
 import com.goggles.lecture_service.domain.enrollment.enums.EnrollmentStatus;
+import com.goggles.lecture_service.domain.enrollment.repository.EnrolledLecturePageQuery;
 import com.goggles.lecture_service.domain.enrollment.repository.EnrollmentRepository;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -19,6 +22,7 @@ public class EnrollmentRepositoryImpl implements EnrollmentRepository {
       EnumSet.of(EnrollmentStatus.RESERVE, EnrollmentStatus.ACTIVE);
 
   private final EnrollmentJpaRepository jpaRepository;
+  private final EnrollmentQueryDslRepository queryDslRepository;
 
   @Override
   public Enrollment save(Enrollment enrollment) {
@@ -52,7 +56,8 @@ public class EnrollmentRepositoryImpl implements EnrollmentRepository {
   }
 
   @Override
-  public List<Enrollment> findActiveByStudentId(UUID studentId) {
-    return jpaRepository.findByStudentIdAndStatus(studentId, EnrollmentStatus.ACTIVE);
+  public <T> CommonPageResponse<T> findEnrolledLectures(
+      EnrolledLecturePageQuery query, Function<Enrollment, T> mapper) {
+    return queryDslRepository.findEnrolledLectures(query, mapper);
   }
 }

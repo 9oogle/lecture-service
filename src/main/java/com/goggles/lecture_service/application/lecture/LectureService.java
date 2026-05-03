@@ -43,6 +43,9 @@ public interface LectureService {
 
   LectureStatusChangeResult changeStatus(LectureStatusChangeCommand command);
 
+  CommonPageResponse<LectureSummary> getTeachingLectures(
+      UUID instructorId, CommonPageRequest pageRequest);
+
   ChapterUpdateResult updateChapter(ChapterUpdateCommand command);
 
   ChapterDeleteResult deleteChapter(ChapterDeleteCommand command);

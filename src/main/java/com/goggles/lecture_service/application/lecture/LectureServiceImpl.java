@@ -77,6 +77,12 @@ public class LectureServiceImpl implements LectureService {
   }
 
   @Override
+  public CommonPageResponse<LectureSummary> getTeachingLectures(
+      UUID instructorId, CommonPageRequest pageRequest) {
+    return lectureQueryService.getTeachingLectures(instructorId, pageRequest);
+  }
+
+  @Override
   public ChapterUpdateResult updateChapter(ChapterUpdateCommand command) {
     return lectureCommandService.updateChapter(command);
   }

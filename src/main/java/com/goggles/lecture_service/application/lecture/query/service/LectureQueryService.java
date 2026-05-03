@@ -13,4 +13,7 @@ public interface LectureQueryService {
       LectureSearchCondition condition, CommonPageRequest pageRequest);
 
   LectureDetail getLectureDetail(UUID lectureId);
+
+  CommonPageResponse<LectureSummary> getTeachingLectures(
+      UUID instructorId, CommonPageRequest pageRequest);
 }
