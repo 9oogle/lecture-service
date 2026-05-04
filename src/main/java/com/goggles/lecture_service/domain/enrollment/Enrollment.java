@@ -110,9 +110,6 @@ public class Enrollment extends BaseAudit {
   public void complete(LocalDateTime now, UUID orderId) {
     validateNow(now);
     validateOrderId(orderId);
-    if (this.status == EnrollmentStatus.ACTIVE) {
-      return; // 멱등 처리
-    }
     if (this.status != EnrollmentStatus.RESERVE) {
       throw new InvalidEnrollmentStatusException(ENROLLMENT_INVALID_STATUS_FOR_ACTIVATE);
     }

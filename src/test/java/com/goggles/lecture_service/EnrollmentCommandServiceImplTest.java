@@ -22,6 +22,7 @@ import com.goggles.lecture_service.domain.enrollment.repository.EnrollmentReposi
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -318,21 +319,32 @@ class EnrollmentCommandServiceImplTest {
     }
 
     @Test
-    @DisplayName("실패: 이미 ACTIVE 인 enrollment 에 재호출 — 도메인 예외 (멱등성은 InboxAdvice 가 책임)")
+    @DisplayName("실패: 이미 ACTIVE 상태인 enrollment 재완료 요청 시 도메인 예외")
     void complete_alreadyActive_throws() {
-      Enrollment a = reservedEnrollment(userId);
-      a.activate(java.time.LocalDateTime.now(), UUID.randomUUID()); // 이미 ACTIVE
-      UUID orderId = UUID.randomUUID();
-      when(enrollmentRepository.findAllByIdIn(List.of(a.getId()))).thenReturn(List.of(a));
+      // given
+      LocalDateTime now = LocalDateTime.now();
 
+      Enrollment enrollment = reservedEnrollment(userId);
+      UUID completedOrderId = UUID.randomUUID();
+
+      // 이미 ACTIVE 상태로 변경
+      enrollment.complete(now, completedOrderId);
+
+      UUID duplicatedOrderId = UUID.randomUUID();
+
+      when(enrollmentRepository.findAllByIdIn(List.of(enrollment.getId())))
+          .thenReturn(List.of(enrollment));
+
+      // when & then
       assertThatThrownBy(
               () ->
                   service.complete(
-                      new LectureEnrollmentCompleteCommand(orderId, List.of(a.getId()))))
+                      new LectureEnrollmentCompleteCommand(
+                          duplicatedOrderId, List.of(enrollment.getId()))))
           .isInstanceOf(InvalidEnrollmentStatusException.class);
 
-      // 이 메서드까지 흘러왔다는 건 컨슈머의 InboxAdvice 가 멱등성 체크를 안 했거나,
-      // inbox 데이터가 유실된 비정상 상황. 도메인 레이어에서도 안전망으로 막아줌.
+      // 멱등성은 InboxAdvice/Consumer 계층에서 처리하고,
+      // 도메인은 RESERVE -> ACTIVE 전이만 허용한다.
     }
 
     @Test

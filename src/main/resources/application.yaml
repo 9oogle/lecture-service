@@ -15,6 +15,15 @@ spring:
         default_batch_fetch_size: 100
         default_schema: lecture
 
+  kafka:
+    consumer:
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+
+    listener:
+      missing-topics-fatal: false
+      ack-mode: record
+
 resilience4j:
   circuitbreaker:
     instances:
@@ -52,14 +61,5 @@ springdoc:
     operationsSorter: method
     tagsSorter: alpha
 
-  kafka:
-    consumer:
-      enable-auto-commit: false
-      auto-offset-reset: earliest
-
-    listener:
-      missing-topics-fatal: false
-      ack-mode: record
-      
 server:
   port: 9005
