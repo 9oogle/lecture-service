@@ -1,6 +1,7 @@
 package com.goggles.lecture_service.application.enrollment.command.service;
 
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentCancelCommand;
+import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentCompleteCommand;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentReserveCommand;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentReserveResult;
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
@@ -13,15 +14,18 @@ import com.goggles.lecture_service.domain.enrollment.exception.EnrollmentReserve
 import com.goggles.lecture_service.domain.enrollment.repository.EnrollmentRepository;
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -76,6 +80,31 @@ public class EnrollmentCommandServiceImpl implements EnrollmentCommandService {
     }
 
     return results;
+  }
+
+  @Override
+  public void complete(LectureEnrollmentCompleteCommand command) {
+    List<Enrollment> enrollments = enrollmentRepository.findAllByIdIn(command.enrollmentIds());
+
+    Map<UUID, Enrollment> enrollmentMap =
+        enrollments.stream().collect(Collectors.toMap(Enrollment::getId, e -> e));
+
+    // 누락 검증 (이벤트 순서 역전 등으로 RESERVE 가 아직 안 만들어졌을 수 있음 → 재시도 유도)
+    for (UUID enrollmentId : command.enrollmentIds()) {
+      if (!enrollmentMap.containsKey(enrollmentId)) {
+        throw new EnrollmentNotFoundException(enrollmentId);
+      }
+    }
+
+    LocalDateTime now = LocalDateTime.now();
+    for (UUID enrollmentId : command.enrollmentIds()) {
+      enrollmentMap.get(enrollmentId).activate(now, command.orderId());
+    }
+
+    log.info(
+        "Enrollment completion processed. orderId={}, count={}",
+        command.orderId(),
+        command.enrollmentIds().size());
   }
 
   @Override

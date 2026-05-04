@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentCancelCommand;
+import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentCompleteCommand;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentReserveCommand;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentReserveResult;
 import com.goggles.lecture_service.application.enrollment.command.service.EnrollmentCommandServiceImpl;
@@ -21,6 +22,7 @@ import com.goggles.lecture_service.domain.enrollment.repository.EnrollmentReposi
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -282,6 +284,80 @@ class EnrollmentCommandServiceImplTest {
                   service.cancel(
                       new LectureEnrollmentCancelCommand(List.of(enrollment.getId()), userId)))
           .isInstanceOf(InvalidEnrollmentStatusException.class);
+    }
+
+    // 헬퍼
+    private Enrollment reservedEnrollment(UUID studentId) {
+      LectureSnapshot snapshot =
+          LectureSnapshot.of(UUID.randomUUID(), "스프링 강의", UUID.randomUUID(), "홍길동");
+      return Enrollment.reserve(snapshot, studentId, DurationPolicy.DAYS_365);
+    }
+  }
+
+  @Nested
+  @DisplayName("수강 등록 완료 (결제 완료 이벤트 처리)")
+  class Complete {
+
+    @Test
+    @DisplayName("성공: RESERVE → ACTIVE 활성화")
+    void complete_reserveToActive_success() {
+      Enrollment a = reservedEnrollment(userId);
+      Enrollment b = reservedEnrollment(userId);
+      UUID orderId = UUID.randomUUID();
+      when(enrollmentRepository.findAllByIdIn(List.of(a.getId(), b.getId())))
+          .thenReturn(List.of(a, b));
+
+      service.complete(
+          new LectureEnrollmentCompleteCommand(orderId, List.of(a.getId(), b.getId())));
+
+      assertThat(a.getStatus()).isEqualTo(EnrollmentStatus.ACTIVE);
+      assertThat(b.getStatus()).isEqualTo(EnrollmentStatus.ACTIVE);
+      assertThat(a.getOrderId()).isEqualTo(orderId);
+      assertThat(b.getOrderId()).isEqualTo(orderId);
+      assertThat(a.getActivatedAt()).isNotNull();
+      assertThat(a.getExpiresAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("실패: 이미 ACTIVE 상태인 enrollment 재완료 요청 시 도메인 예외")
+    void complete_alreadyActive_throws() {
+      // given
+      LocalDateTime now = LocalDateTime.now();
+
+      Enrollment enrollment = reservedEnrollment(userId);
+      UUID completedOrderId = UUID.randomUUID();
+
+      // 이미 ACTIVE 상태로 변경
+      enrollment.complete(now, completedOrderId);
+
+      UUID duplicatedOrderId = UUID.randomUUID();
+
+      when(enrollmentRepository.findAllByIdIn(List.of(enrollment.getId())))
+          .thenReturn(List.of(enrollment));
+
+      // when & then
+      assertThatThrownBy(
+              () ->
+                  service.complete(
+                      new LectureEnrollmentCompleteCommand(
+                          duplicatedOrderId, List.of(enrollment.getId()))))
+          .isInstanceOf(InvalidEnrollmentStatusException.class);
+
+      // 멱등성은 InboxAdvice/Consumer 계층에서 처리하고,
+      // 도메인은 RESERVE -> ACTIVE 전이만 허용한다.
+    }
+
+    @Test
+    @DisplayName("실패: enrollmentId 가 존재하지 않으면 예외 (Kafka 재시도 유도)")
+    void complete_missingEnrollment_throws() {
+      UUID missing = UUID.randomUUID();
+      UUID orderId = UUID.randomUUID();
+      when(enrollmentRepository.findAllByIdIn(List.of(missing))).thenReturn(List.of());
+
+      assertThatThrownBy(
+              () ->
+                  service.complete(new LectureEnrollmentCompleteCommand(orderId, List.of(missing))))
+          .isInstanceOf(EnrollmentNotFoundException.class);
     }
 
     // 헬퍼

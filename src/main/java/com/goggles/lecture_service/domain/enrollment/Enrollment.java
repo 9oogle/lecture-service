@@ -1,5 +1,7 @@
 package com.goggles.lecture_service.domain.enrollment;
 
+import static com.goggles.lecture_service.domain.enrollment.exception.EnrollmentErrorCode.*;
+
 import com.goggles.common.domain.BaseAudit;
 import com.goggles.lecture_service.domain.enrollment.enums.EnrollmentStatus;
 import com.goggles.lecture_service.domain.enrollment.exception.EnrollmentErrorCode;
@@ -97,13 +99,24 @@ public class Enrollment extends BaseAudit {
     validateNow(now);
     validateOrderId(orderId);
     if (this.status != EnrollmentStatus.RESERVE) {
-      throw new InvalidEnrollmentStatusException(
-          EnrollmentErrorCode.ENROLLMENT_INVALID_STATUS_FOR_ACTIVATE);
+      throw new InvalidEnrollmentStatusException(ENROLLMENT_INVALID_STATUS_FOR_ACTIVATE);
     }
     this.activatedAt = now;
     this.orderId = orderId;
     this.expiresAt = calculateExpiresAt(now, this.durationPolicy);
     this.status = EnrollmentStatus.ACTIVE;
+  }
+
+  public void complete(LocalDateTime now, UUID orderId) {
+    validateNow(now);
+    validateOrderId(orderId);
+    if (this.status != EnrollmentStatus.RESERVE) {
+      throw new InvalidEnrollmentStatusException(ENROLLMENT_INVALID_STATUS_FOR_ACTIVATE);
+    }
+    this.orderId = orderId;
+    this.status = EnrollmentStatus.ACTIVE;
+    this.activatedAt = now;
+    this.expiresAt = calculateExpiresAt(now, this.durationPolicy);
   }
 
   public void cancel() {

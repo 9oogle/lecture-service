@@ -13,6 +13,9 @@ public enum EnrollmentErrorCode {
   // 중복
   ENROLLMENT_DUPLICATE("이미 수강 중인 강의입니다."),
 
+  // 이벤트
+  ENROLLMENT_COMPLETION_EVENT_PAYLOAD_INVALID("주문 완료 이벤트 payload 형식이 올바르지 않습니다."),
+
   // 상태 전이
   ENROLLMENT_INVALID_STATUS_FOR_ACTIVATE("RESERVE 상태에서만 활성화할 수 있습니다."),
   ENROLLMENT_INVALID_STATUS_FOR_CANCEL("RESERVE 또는 ACTIVE 상태에서만 취소할 수 있습니다."),
