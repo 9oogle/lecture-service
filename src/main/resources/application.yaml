@@ -60,6 +60,3 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
     tagsSorter: alpha
-
-server:
-  port: 9005
