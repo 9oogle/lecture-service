@@ -416,6 +416,7 @@ Value에 아래 JSON을 입력합니다.
 ```json
 {
   "orderId": "d0000000-0000-0000-0000-0000000000ff",
+  "userId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
   "enrollmentIds": [
     "e1000000-0000-0000-0000-00000000000b"
   ]
