@@ -1,0 +1,948 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:9005
+  description: Generated server url
+paths:
+  /internal/v1/lectures-enrollment:
+    post:
+      tags:
+      - internal-lecture-enrollment-controller
+      operationId: reserve
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-User-Role
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LectureEnrollmentReserveRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LectureEnrollmentReserveResponse"
+  /internal/v1/lectures-enrollment/cancellation:
+    post:
+      tags:
+      - internal-lecture-enrollment-controller
+      operationId: cancel
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-User-Role
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LectureEnrollmentCancelRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+  /api/v1/lectures:
+    get:
+      tags:
+      - lecture-controller
+      operationId: getLectures
+      parameters:
+      - name: query
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/LectureListQuery"
+      - name: pageRequest
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/CommonPageRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonPageResponseLectureSummary"
+    post:
+      tags:
+      - lecture-controller
+      operationId: createLecture
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-User-Name
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LectureCreateRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LectureCreateResponse"
+  /api/v1/lectures/{lectureId}/chapters:
+    post:
+      tags:
+      - lecture-controller
+      operationId: createChapter
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-User-Name
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: lectureId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChapterCreateRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ChapterCreateResponse"
+  /api/v1/lectures/{lectureId}:
+    get:
+      tags:
+      - lecture-controller
+      operationId: getLectureDetail
+      parameters:
+      - name: lectureId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LectureDetail"
+    delete:
+      tags:
+      - lecture-controller
+      operationId: deleteLecture
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-User-Role
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: lectureId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LectureDeleteResponse"
+    patch:
+      tags:
+      - lecture-controller
+      operationId: updateLecture
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-User-Role
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: lectureId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LectureUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LectureUpdateResponse"
+  /api/v1/lectures/{lectureId}/status:
+    patch:
+      tags:
+      - lecture-controller
+      operationId: changeStatus
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-User-Role
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: lectureId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LectureStatusChangeRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LectureStatusChangeResponse"
+  /api/v1/lectures/{lectureId}/review-requests:
+    patch:
+      tags:
+      - lecture-controller
+      operationId: submitReview
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-User-Role
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: lectureId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LectureStatusChangeResponse"
+  /api/v1/lectures/{lectureId}/chapters/{chapterId}:
+    delete:
+      tags:
+      - lecture-controller
+      operationId: deleteChapter
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-User-Role
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: lectureId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: chapterId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ChapterDeleteResponse"
+    patch:
+      tags:
+      - lecture-controller
+      operationId: updateChapter
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-User-Role
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: lectureId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: chapterId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChapterUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ChapterUpdateResponse"
+  /api/v1/lectures/{lectureId}/chapters/reorder:
+    patch:
+      tags:
+      - lecture-controller
+      operationId: reorderChapters
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-User-Role
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: lectureId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChapterReorderRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ChapterReorderResponse"
+  /api/v1/me/lectures/teaching:
+    get:
+      tags:
+      - my-lecture-controller
+      operationId: getTeachingLectures
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: pageRequest
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/CommonPageRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonPageResponseLectureSummary"
+  /api/v1/me/lectures/enrolled:
+    get:
+      tags:
+      - my-lecture-controller
+      operationId: getEnrolledLectures
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: pageRequest
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/CommonPageRequest"
+      - name: keyword
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonPageResponseEnrolledLectureResult"
+components:
+  schemas:
+    LectureEnrollmentReserveRequest:
+      type: object
+      properties:
+        productIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+      required:
+      - productIds
+    LectureEnrollmentReserveResponse:
+      type: object
+      properties:
+        enrollmentId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        productName:
+          type: string
+        productPrice:
+          type: integer
+          format: int64
+        instructorId:
+          type: string
+          format: uuid
+        instructorName:
+          type: string
+    LectureEnrollmentCancelRequest:
+      type: object
+      properties:
+        enrollmentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+      required:
+      - enrollmentIds
+    LectureCreateRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          maxLength: 50
+          minLength: 0
+        title:
+          type: string
+          maxLength: 200
+          minLength: 0
+        subtitle:
+          type: string
+          maxLength: 300
+          minLength: 0
+        description:
+          type: string
+        durationPolicy:
+          type: string
+          enum:
+          - DAYS_90
+          - DAYS_180
+          - DAYS_365
+          - UNLIMITED
+        price:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - category
+      - price
+      - title
+    LectureCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PENDING_REVIEW
+          - PUBLISHED
+          - HIDDEN
+    ChapterCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        content:
+          type: string
+          minLength: 1
+        sortOrder:
+          type: integer
+          format: int32
+          minimum: 1
+        durationSeconds:
+          type: integer
+          format: int32
+          minimum: 1
+      required:
+      - content
+      - durationSeconds
+      - sortOrder
+      - title
+    ChapterCreateResponse:
+      type: object
+      properties:
+        lectureId:
+          type: string
+          format: uuid
+        chapterId:
+          type: string
+          format: uuid
+    LectureUpdateRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          maxLength: 50
+          minLength: 0
+        title:
+          type: string
+          maxLength: 200
+          minLength: 0
+        subtitle:
+          type: string
+          maxLength: 300
+          minLength: 0
+        description:
+          type: string
+        durationPolicy:
+          type: string
+          enum:
+          - DAYS_90
+          - DAYS_180
+          - DAYS_365
+          - UNLIMITED
+        price:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - category
+      - durationPolicy
+      - price
+      - title
+    LectureUpdateResponse:
+      type: object
+      properties:
+        lectureId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PENDING_REVIEW
+          - PUBLISHED
+          - HIDDEN
+    LectureStatusChangeRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PENDING_REVIEW
+          - PUBLISHED
+          - HIDDEN
+        rejectionReason:
+          type: string
+          maxLength: 1000
+          minLength: 0
+      required:
+      - status
+    LectureStatusChangeResponse:
+      type: object
+      properties:
+        lectureId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PENDING_REVIEW
+          - PUBLISHED
+          - HIDDEN
+        rejectionReason:
+          type: string
+    ChapterUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        content:
+          type: string
+          minLength: 1
+        durationSeconds:
+          type: integer
+          format: int32
+          minimum: 1
+      required:
+      - content
+      - durationSeconds
+      - title
+    ChapterUpdateResponse:
+      type: object
+      properties:
+        lectureId:
+          type: string
+          format: uuid
+        chapterId:
+          type: string
+          format: uuid
+    ChapterOrderRequest:
+      type: object
+      properties:
+        chapterId:
+          type: string
+          format: uuid
+        sortOrder:
+          type: integer
+          format: int32
+          minimum: 1
+      required:
+      - chapterId
+      - sortOrder
+    ChapterReorderRequest:
+      type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChapterOrderRequest"
+          minItems: 1
+      required:
+      - orders
+    ChapterReorderResponse:
+      type: object
+      properties:
+        lectureId:
+          type: string
+          format: uuid
+    CommonPageRequest:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+    CommonPageResponseLectureSummary:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/LectureSummary"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    LectureSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        instructorName:
+          type: string
+        category:
+          type: string
+        title:
+          type: string
+        subtitle:
+          type: string
+        price:
+          type: integer
+          format: int64
+        durationPolicy:
+          type: string
+          enum:
+          - DAYS_90
+          - DAYS_180
+          - DAYS_365
+          - UNLIMITED
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PENDING_REVIEW
+          - PUBLISHED
+          - HIDDEN
+    CommonPageResponseEnrolledLectureResult:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnrolledLectureResult"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    EnrolledLectureResult:
+      type: object
+      properties:
+        enrollmentId:
+          type: string
+          format: uuid
+        lectureId:
+          type: string
+          format: uuid
+        lectureTitle:
+          type: string
+        instructorId:
+          type: string
+          format: uuid
+        instructorName:
+          type: string
+        status:
+          type: string
+          enum:
+          - RESERVE
+          - ACTIVE
+          - CANCELED
+          - EXPIRED
+        durationPolicy:
+          type: string
+          enum:
+          - DAYS_90
+          - DAYS_180
+          - DAYS_365
+          - UNLIMITED
+        activatedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        lastAccessedAt:
+          type: string
+          format: date-time
+    LectureListQuery:
+      type: object
+      properties:
+        keyword:
+          type: string
+        category:
+          type: string
+        minPrice:
+          type: integer
+          format: int64
+        maxPrice:
+          type: integer
+          format: int64
+        durationPolicy:
+          type: string
+          enum:
+          - DAYS_90
+          - DAYS_180
+          - DAYS_365
+          - UNLIMITED
+    ChapterDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        content:
+          type: string
+        sortOrder:
+          type: integer
+          format: int32
+        durationSeconds:
+          type: integer
+          format: int32
+    LectureDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        instructorId:
+          type: string
+          format: uuid
+        instructorName:
+          type: string
+        category:
+          type: string
+        title:
+          type: string
+        subtitle:
+          type: string
+        description:
+          type: string
+        price:
+          type: integer
+          format: int64
+        durationPolicy:
+          type: string
+          enum:
+          - DAYS_90
+          - DAYS_180
+          - DAYS_365
+          - UNLIMITED
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PENDING_REVIEW
+          - PUBLISHED
+          - HIDDEN
+        rejectionReason:
+          type: string
+        chapters:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChapterDetail"
+    LectureDeleteResponse:
+      type: object
+      properties:
+        lectureId:
+          type: string
+          format: uuid
+    ChapterDeleteResponse:
+      type: object
+      properties:
+        lectureId:
+          type: string
+          format: uuid
+        chapterId:
+          type: string
+          format: uuid
