@@ -81,6 +81,7 @@ dependencies {
 
     // ── DB ────────────────────────────────────────────────────────
     runtimeOnly 'org.postgresql:postgresql'
+    runtimeOnly 'com.h2database:h2'
 
     // ── Test ──────────────────────────────────────────────────────
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -88,7 +89,6 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testRuntimeOnly 'com.h2database:h2'
 }
 
 dependencyManagement {
@@ -98,12 +98,18 @@ dependencyManagement {
 }
 
 openApi {
-    apiDocsUrl.set("http://localhost:9005/v3/api-docs")
-    outputDir.set(layout.buildDirectory.dir("docs"))
-    outputFileName.set("openapi.json")
+    apiDocsUrl.set("http://localhost:9005/v3/api-docs.yaml")
+    outputDir.set(file("docs"))
+    outputFileName.set("openapi.yaml")
     waitTimeInSeconds.set(60)
+
     customBootRun {
-        args.set(["--spring.profiles.active=openapi"])
+        args.set([
+                "--spring.profiles.active=openapi",
+                "--spring.cloud.config.enabled=false",
+                "--spring.cloud.discovery.enabled=false",
+                "--eureka.client.enabled=false"
+        ])
     }
 }
 
