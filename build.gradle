@@ -99,6 +99,12 @@ dependencyManagement {
 
 openApi {
     apiDocsUrl.set("http://localhost:9005/v3/api-docs")
+    outputDir.set(layout.buildDirectory.dir("docs"))
+    outputFileName.set("openapi.json")
+    waitTimeInSeconds.set(60)
+    customBootRun {
+        args.set(["--spring.profiles.active=openapi"])
+    }
 }
 
 tasks.named('test') {
