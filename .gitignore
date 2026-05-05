@@ -21,3 +21,10 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# 환경 변수 파일 (절대 커밋 금지)
+.env.local
+.env.dev
+.env.prod
+*.env
+!.env.example
