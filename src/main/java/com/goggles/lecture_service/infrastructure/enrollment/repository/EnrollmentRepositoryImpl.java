@@ -5,6 +5,7 @@ import com.goggles.lecture_service.domain.enrollment.Enrollment;
 import com.goggles.lecture_service.domain.enrollment.enums.EnrollmentStatus;
 import com.goggles.lecture_service.domain.enrollment.repository.EnrolledLecturePageQuery;
 import com.goggles.lecture_service.domain.enrollment.repository.EnrollmentRepository;
+import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -59,5 +61,10 @@ public class EnrollmentRepositoryImpl implements EnrollmentRepository {
   public <T> CommonPageResponse<T> findEnrolledLectures(
       EnrolledLecturePageQuery query, Function<Enrollment, T> mapper) {
     return queryDslRepository.findEnrolledLectures(query, mapper);
+  }
+
+  @Override
+  public List<UUID> findExpirationTargetIds(LocalDateTime now, int limit) {
+    return jpaRepository.findExpirationTargetIds(now, PageRequest.of(0, limit));
   }
 }

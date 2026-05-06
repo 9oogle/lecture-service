@@ -2,6 +2,7 @@ package com.goggles.lecture_service.infrastructure.enrollment.repository;
 
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
 import com.goggles.lecture_service.domain.enrollment.enums.EnrollmentStatus;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -32,4 +33,12 @@ public interface EnrollmentJpaRepository extends JpaRepository<Enrollment, UUID>
   List<Enrollment> findAllByOrderId(UUID orderId);
 
   List<Enrollment> findAllByIdIn(List<UUID> ids);
+
+  @Query(
+      "select e.id from Enrollment e "
+          + "where e.status = com.goggles.lecture_service.domain.enrollment.enums.EnrollmentStatus.ACTIVE "
+          + "and e.expiresAt < :now "
+          + "order by e.expiresAt asc")
+  List<UUID> findExpirationTargetIds(
+      @Param("now") LocalDateTime now, org.springframework.data.domain.Pageable pageable);
 }

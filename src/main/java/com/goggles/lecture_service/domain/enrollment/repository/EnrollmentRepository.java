@@ -2,6 +2,7 @@ package com.goggles.lecture_service.domain.enrollment.repository;
 
 import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,4 +25,6 @@ public interface EnrollmentRepository {
 
   <T> CommonPageResponse<T> findEnrolledLectures(
       EnrolledLecturePageQuery query, Function<Enrollment, T> mapper);
+
+  List<UUID> findExpirationTargetIds(LocalDateTime now, int limit);
 }
