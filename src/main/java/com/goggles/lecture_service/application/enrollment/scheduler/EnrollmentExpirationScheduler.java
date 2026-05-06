@@ -21,7 +21,7 @@ public class EnrollmentExpirationScheduler {
 
   private final EnrollmentRepository enrollmentRepository;
 
-  @Scheduled(cron = "0 30 0 * * *")
+  @Scheduled(cron = "0 30 0 * * *", zone = "Asia/Seoul")
   @SchedulerLock(name = "enrollment-expiration", lockAtLeastFor = "PT1M", lockAtMostFor = "PT10M")
   @Transactional
   public void expireEnrollments() {
