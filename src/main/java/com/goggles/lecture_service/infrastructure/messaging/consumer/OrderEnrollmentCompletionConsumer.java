@@ -19,18 +19,19 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class OrderEnrollmentCompletionConsumer {
 
-  public static final String TOPIC = "order.enrollment.completion";
   public static final String GROUP_NAME = "lecture-service.enrollment-completion";
 
   private final EnrollmentCommandService enrollmentCommandService;
   private final ObjectMapper objectMapper;
 
-  @KafkaListener(topics = TOPIC, groupId = GROUP_NAME)
+  @KafkaListener(
+      topics = "${topics.order.completed}", // ← yaml 참조
+      groupId = GROUP_NAME)
   @IdempotentConsumer(GROUP_NAME)
   public void consume(ConsumerRecord<String, String> record) {
     log.info(
         "[Kafka] Received {} | partition={}, offset={}",
-        TOPIC,
+        record.topic(),
         record.partition(),
         record.offset());
 

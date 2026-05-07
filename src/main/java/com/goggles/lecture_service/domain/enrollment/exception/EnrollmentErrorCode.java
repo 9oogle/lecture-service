@@ -15,6 +15,7 @@ public enum EnrollmentErrorCode {
 
   // 이벤트
   ENROLLMENT_COMPLETION_EVENT_PAYLOAD_INVALID("주문 완료 이벤트 payload 형식이 올바르지 않습니다."),
+  ENROLLMENT_CANCELLED_EVENT_PAYLOAD_INVALID("주문 취소 이벤트 payload 형식이 올바르지 않습니다."),
 
   // 상태 전이
   ENROLLMENT_INVALID_STATUS_FOR_ACTIVATE("RESERVE 상태에서만 활성화할 수 있습니다."),
