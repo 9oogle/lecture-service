@@ -7,7 +7,7 @@ import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnr
 import com.goggles.lecture_service.application.enrollment.command.service.EnrollmentCommandService;
 import com.goggles.lecture_service.domain.enrollment.exception.InvalidEnrollmentFieldException;
 import com.goggles.lecture_service.domain.enrollment.exception.InvalidOrderCancelledEventPayloadException;
-import com.goggles.lecture_service.infrastructure.messaging.event.OrderCancelledEvent;
+import com.goggles.lecture_service.infrastructure.messaging.event.LectureOrderCancelEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class OrderCancelledConsumer {
+public class LectureOrderCancelConsumer {
 
   public static final String GROUP_NAME = "lecture-service.order-cancelled";
 
@@ -33,31 +33,29 @@ public class OrderCancelledConsumer {
         record.partition(),
         record.offset());
 
-    OrderCancelledEvent event = parse(record.value());
+    LectureOrderCancelEvent event = parse(record.value());
 
     log.info(
-        "Processing order cancellation. orderId={}, userId={}, enrollmentCount={}, reason={}",
+        "Processing order cancellation. orderId={}, userId={}, enrollmentCount={}",
         event.orderId(),
         event.userId(),
-        event.enrollmentIds().size(),
-        event.cancelReason());
+        event.enrollmentIds().size());
 
     enrollmentCommandService.cancel(toCommand(event));
   }
 
-  private OrderCancelledEvent parse(String value) {
+  private LectureOrderCancelEvent parse(String value) {
     try {
-      return objectMapper.readValue(value, OrderCancelledEvent.class);
+      return objectMapper.readValue(value, LectureOrderCancelEvent.class);
     } catch (JsonProcessingException e) {
       throw new InvalidOrderCancelledEventPayloadException();
     }
   }
 
-  private LectureEnrollmentCancelCommand toCommand(OrderCancelledEvent event) {
+  private LectureEnrollmentCancelCommand toCommand(LectureOrderCancelEvent event) {
     try {
       return new LectureEnrollmentCancelCommand(event.enrollmentIds(), event.userId());
     } catch (InvalidEnrollmentFieldException e) {
-      // 필수 필드(enrollmentIds/userId)가 누락된 경우
       throw new InvalidOrderCancelledEventPayloadException();
     }
   }
