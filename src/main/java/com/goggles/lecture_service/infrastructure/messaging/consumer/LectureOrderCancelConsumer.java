@@ -36,9 +36,8 @@ public class LectureOrderCancelConsumer {
     LectureOrderCancelEvent event = parse(record.value());
 
     log.info(
-        "Processing order cancellation. orderId={}, userId={}, enrollmentCount={}",
+        "Processing order cancellation. orderId={}, enrollmentCount={}",
         event.orderId(),
-        event.userId(),
         event.enrollmentIds().size());
 
     enrollmentCommandService.cancel(toCommand(event));
