@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +42,12 @@ public class EnrollmentCommandServiceImpl implements EnrollmentCommandService {
     Map<UUID, Lecture> lectureMap =
         lectures.stream().collect(Collectors.toMap(Lecture::getId, l -> l));
 
-    // 2) 전체 검증
+    // 2) 중복 수강 일괄 조회 (N+1 방지)
+    Set<UUID> alreadyEnrolledLectureIds =
+        enrollmentRepository.findActiveLectureIdsByStudentAndLectureIdIn(
+            command.userId(), command.productIds());
+
+    // 3) 전체 검증
     for (UUID productId : command.productIds()) {
       Lecture lecture = lectureMap.get(productId);
 
@@ -53,12 +59,13 @@ public class EnrollmentCommandServiceImpl implements EnrollmentCommandService {
         throw new EnrollmentReserveFailedException(productId, ReserveFailReason.NOT_PUBLISHED);
       }
 
-      if (enrollmentRepository.existsActiveByStudentAndLecture(command.userId(), productId)) {
+      if (alreadyEnrolledLectureIds.contains(productId)) {
         throw new EnrollmentReserveFailedException(
             productId, ReserveFailReason.DUPLICATE_ENROLLMENT);
       }
     }
-    // 3) 검증 통과 후 Enrollment 저장
+
+    // 4) 검증 통과 후 Enrollment 저장
     List<LectureEnrollmentReserveResult> results = new ArrayList<>();
 
     for (UUID productId : command.productIds()) {

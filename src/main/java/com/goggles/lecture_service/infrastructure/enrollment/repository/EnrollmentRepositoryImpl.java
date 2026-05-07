@@ -6,7 +6,9 @@ import com.goggles.lecture_service.domain.enrollment.enums.EnrollmentStatus;
 import com.goggles.lecture_service.domain.enrollment.repository.EnrolledLecturePageQuery;
 import com.goggles.lecture_service.domain.enrollment.repository.EnrollmentRepository;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -47,9 +49,14 @@ public class EnrollmentRepositoryImpl implements EnrollmentRepository {
   }
 
   @Override
-  public boolean existsActiveByStudentAndLecture(UUID studentId, UUID lectureId) {
-    return jpaRepository.existsByStudentAndLectureAndStatusIn(
-        studentId, lectureId, ACTIVE_OR_RESERVED);
+  public Set<UUID> findActiveLectureIdsByStudentAndLectureIdIn(
+      UUID studentId, Collection<UUID> lectureIds) {
+    if (lectureIds == null || lectureIds.isEmpty()) {
+      return Set.of();
+    }
+    return new HashSet<>(
+        jpaRepository.findLectureIdsByStudentAndLectureIdInAndStatusIn(
+            studentId, lectureIds, ACTIVE_OR_RESERVED));
   }
 
   @Override

@@ -24,6 +24,7 @@ import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
 import com.goggles.lecture_service.domain.lecture.repository.LectureRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -61,8 +62,9 @@ class EnrollmentCommandServiceImplTest {
     void reserve_singleProduct_success() {
       Lecture lecture = publishedLecture();
       when(lectureRepository.findAllByIdIn(List.of(lecture.getId()))).thenReturn(List.of(lecture));
-      when(enrollmentRepository.existsActiveByStudentAndLecture(userId, lecture.getId()))
-          .thenReturn(false);
+      when(enrollmentRepository.findActiveLectureIdsByStudentAndLectureIdIn(
+              userId, List.of(lecture.getId())))
+          .thenReturn(Set.of());
       when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
 
       List<LectureEnrollmentReserveResult> results =
@@ -81,10 +83,8 @@ class EnrollmentCommandServiceImplTest {
       List<UUID> productIds = List.of(lecture1.getId(), lecture2.getId());
 
       when(lectureRepository.findAllByIdIn(productIds)).thenReturn(List.of(lecture1, lecture2));
-      when(enrollmentRepository.existsActiveByStudentAndLecture(userId, lecture1.getId()))
-          .thenReturn(false);
-      when(enrollmentRepository.existsActiveByStudentAndLecture(userId, lecture2.getId()))
-          .thenReturn(false);
+      when(enrollmentRepository.findActiveLectureIdsByStudentAndLectureIdIn(userId, productIds))
+          .thenReturn(Set.of());
       when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(inv -> inv.getArgument(0));
 
       List<LectureEnrollmentReserveResult> results =
@@ -112,8 +112,8 @@ class EnrollmentCommandServiceImplTest {
       List<UUID> productIds = List.of(published.getId(), draft.getId());
 
       when(lectureRepository.findAllByIdIn(productIds)).thenReturn(List.of(published, draft));
-      when(enrollmentRepository.existsActiveByStudentAndLecture(userId, published.getId()))
-          .thenReturn(false);
+      when(enrollmentRepository.findActiveLectureIdsByStudentAndLectureIdIn(userId, productIds))
+          .thenReturn(Set.of());
 
       assertThatThrownBy(
               () -> service.reserve(new LectureEnrollmentReserveCommand(productIds, userId)))
@@ -157,8 +157,9 @@ class EnrollmentCommandServiceImplTest {
     void reserve_duplicate_throws() {
       Lecture lecture = publishedLecture();
       when(lectureRepository.findAllByIdIn(List.of(lecture.getId()))).thenReturn(List.of(lecture));
-      when(enrollmentRepository.existsActiveByStudentAndLecture(userId, lecture.getId()))
-          .thenReturn(true);
+      when(enrollmentRepository.findActiveLectureIdsByStudentAndLectureIdIn(
+              userId, List.of(lecture.getId())))
+          .thenReturn(Set.of(lecture.getId()));
 
       assertThatThrownBy(
               () ->

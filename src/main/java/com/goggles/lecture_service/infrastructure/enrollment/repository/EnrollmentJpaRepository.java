@@ -21,13 +21,13 @@ public interface EnrollmentJpaRepository extends JpaRepository<Enrollment, UUID>
       @Param("orderId") UUID orderId, @Param("lectureId") UUID lectureId);
 
   @Query(
-      "select count(e) > 0 from Enrollment e "
+      "select e.lectureSnapshot.lectureId from Enrollment e "
           + "where e.studentId = :studentId "
-          + "and e.lectureSnapshot.lectureId = :lectureId "
+          + "and e.lectureSnapshot.lectureId in :lectureIds "
           + "and e.status in :statuses")
-  boolean existsByStudentAndLectureAndStatusIn(
+  List<UUID> findLectureIdsByStudentAndLectureIdInAndStatusIn(
       @Param("studentId") UUID studentId,
-      @Param("lectureId") UUID lectureId,
+      @Param("lectureIds") Collection<UUID> lectureIds,
       @Param("statuses") Collection<EnrollmentStatus> statuses);
 
   List<Enrollment> findAllByOrderId(UUID orderId);
