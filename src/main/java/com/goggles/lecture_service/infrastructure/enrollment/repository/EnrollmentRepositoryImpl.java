@@ -77,4 +77,12 @@ public class EnrollmentRepositoryImpl implements EnrollmentRepository {
         now,
         PageRequest.of(0, limit));
   }
+
+  @Override
+  public void deleteAllByIdIn(List<UUID> ids) {
+    if (ids == null || ids.isEmpty()) {
+      return;
+    }
+    jpaRepository.deleteAllByIdInBatch(ids);
+  }
 }

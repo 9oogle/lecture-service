@@ -30,4 +30,6 @@ public interface EnrollmentRepository {
       EnrolledLecturePageQuery query, Function<Enrollment, T> mapper);
 
   List<UUID> findExpirationTargetIds(LocalDateTime now, int limit);
+
+  void deleteAllByIdIn(List<UUID> ids);
 }
