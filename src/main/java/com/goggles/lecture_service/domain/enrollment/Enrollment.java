@@ -177,6 +177,14 @@ public class Enrollment extends BaseAudit {
           EnrollmentErrorCode.ENROLLMENT_DURATION_POLICY_REQUIRED);
   }
 
+  // 결제 실패 보상 트랙잭션
+  public void validateRollbackable() {
+    if (this.status != EnrollmentStatus.RESERVE) {
+      throw new InvalidEnrollmentStatusException(
+          EnrollmentErrorCode.ENROLLMENT_INVALID_STATUS_FOR_ROLLBACK);
+    }
+  }
+
   private static void validateOrderId(UUID orderId) {
     if (orderId == null) {
       throw new InvalidEnrollmentFieldException(EnrollmentErrorCode.ENROLLMENT_ORDER_ID_REQUIRED);
