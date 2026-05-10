@@ -4,6 +4,7 @@ import com.goggles.lecture_service.application.enrollment.command.service.Enroll
 import com.goggles.lecture_service.presentation.enrollment.internal.dto.LectureEnrollmentCancelRequest;
 import com.goggles.lecture_service.presentation.enrollment.internal.dto.LectureEnrollmentReserveRequest;
 import com.goggles.lecture_service.presentation.enrollment.internal.dto.LectureEnrollmentReserveResponse;
+import com.goggles.lecture_service.presentation.enrollment.internal.dto.LectureEnrollmentRollbackRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -44,5 +45,14 @@ public class InternalLectureEnrollmentController {
       @Valid @RequestBody LectureEnrollmentCancelRequest request) {
 
     enrollmentCommandService.cancel(request.toCommand(userId));
+  }
+
+  @PostMapping("/rollback")
+  @ResponseStatus(HttpStatus.OK)
+  public void rollback(
+      @RequestHeader("X-User-Id") UUID userId,
+      @Valid @RequestBody LectureEnrollmentRollbackRequest request) {
+
+    enrollmentCommandService.rollback(request.toCommand(userId));
   }
 }

@@ -4,6 +4,7 @@ import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnr
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentCompleteCommand;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentReserveCommand;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentReserveResult;
+import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentRollbackCommand;
 import java.util.List;
 
 public interface EnrollmentCommandService {
@@ -13,4 +14,6 @@ public interface EnrollmentCommandService {
   void complete(LectureEnrollmentCompleteCommand command);
 
   void cancel(LectureEnrollmentCancelCommand command);
+
+  void rollback(LectureEnrollmentRollbackCommand command);
 }
