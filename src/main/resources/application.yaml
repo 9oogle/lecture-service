@@ -1,62 +1,23 @@
 spring:
   application:
     name: lecture-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE}
   config:
-    import: optional:file:.env[.properties]
+    import:
+      - optional:file:.env[.properties]
+      - "optional:configserver:"
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: config-server
+      fail-fast: false
 
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
-    open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
-        default_batch_fetch_size: 100
-        default_schema: lecture
-
-  kafka:
-    consumer:
-      enable-auto-commit: false
-      auto-offset-reset: earliest
-
-    listener:
-      missing-topics-fatal: false
-      ack-mode: record
-
-resilience4j:
-  circuitbreaker:
-    instances:
-      hub-server:
-        failure-rate-threshold: 50
-        minimum-number-of-calls: 5
-        sliding-window-size: 10
-        wait-duration-in-open-state: 10s
-        permitted-number-of-calls-in-half-open-state: 3
-
-# Actuator: Prometheus 엔드포인트는 모든 환경에서 노출 (스크레이프 여부는 prometheus.yml에서 결정)
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health, info, prometheus
-  endpoint:
-    prometheus:
-      enabled: true
-  metrics:
-    tags:
-      application: ${spring.application.name}   # Grafana 앱별 필터링에 사용
-  tracing:
-    sampling:
-      probability: 1.0                          # 로컬 기본값 (local 프로파일에서 0.0 으로 override)
-  zipkin:
-    tracing:
-      endpoint: http://localhost:9411/api/v2/spans   # 기본값 (prod 프로파일에서 override)
-
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    operationsSorter: method
-    tagsSorter: alpha
+# Config Server를 Eureka로 찾으려면 Eureka 주소만 로컬에 있으면 됨
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://${EUREKA_SERVER_URL1:localhost}:9001/eureka/,http://${EUREKA_SERVER_URL2:localhost}:9002/eureka/
