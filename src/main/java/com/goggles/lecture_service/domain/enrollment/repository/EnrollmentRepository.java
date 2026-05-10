@@ -3,8 +3,10 @@ package com.goggles.lecture_service.domain.enrollment.repository;
 import com.goggles.common.pagination.CommonPageResponse;
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -18,8 +20,9 @@ public interface EnrollmentRepository {
 
   Optional<Enrollment> findByOrderIdAndLectureId(UUID orderId, UUID lectureId);
 
-  // 동일 학생 + 동일 강의에 RESERVE/ACTIVE 인 enrollment 존재 여부. 중복 수강 검증용
-  boolean existsActiveByStudentAndLecture(UUID studentId, UUID lectureId);
+  // 학생이 이미 RESERVE/ACTIVE 상태로 보유한 lectureId 집합 반환 / 중복 수강 검증용 (배치)
+  Set<UUID> findActiveLectureIdsByStudentAndLectureIdIn(
+      UUID studentId, Collection<UUID> lectureIds);
 
   List<Enrollment> findAllByOrderId(UUID orderId);
 
