@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -36,9 +37,9 @@ public interface EnrollmentJpaRepository extends JpaRepository<Enrollment, UUID>
 
   @Query(
       "select e.id from Enrollment e "
-          + "where e.status = com.goggles.lecture_service.domain.enrollment.enums.EnrollmentStatus.ACTIVE "
+          + "where e.status = :status "
           + "and e.expiresAt < :now "
           + "order by e.expiresAt asc")
   List<UUID> findExpirationTargetIds(
-      @Param("now") LocalDateTime now, org.springframework.data.domain.Pageable pageable);
+      @Param("status") EnrollmentStatus status, @Param("now") LocalDateTime now, Pageable pageable);
 }

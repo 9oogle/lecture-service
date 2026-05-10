@@ -14,8 +14,6 @@ spring:
         enabled: true
         service-id: config-server
       fail-fast: false
-      retry:
-        max-attempts: 6
 
 # Config Server를 Eureka로 찾으려면 Eureka 주소만 로컬에 있으면 됨
 eureka:
