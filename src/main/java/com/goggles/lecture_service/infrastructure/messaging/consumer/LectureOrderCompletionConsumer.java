@@ -24,7 +24,7 @@ public class LectureOrderCompletionConsumer {
   private final EnrollmentCommandService enrollmentCommandService;
   private final ObjectMapper objectMapper;
 
-  @KafkaListener(topics = "${topics.order.completed}", groupId = GROUP_NAME)
+  @KafkaListener(topics = "${topics.order.lecture-completed}", groupId = GROUP_NAME)
   @IdempotentConsumer(GROUP_NAME)
   public void consume(ConsumerRecord<String, String> record) {
     log.info(

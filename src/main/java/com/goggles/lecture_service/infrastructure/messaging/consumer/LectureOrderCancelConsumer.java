@@ -24,7 +24,7 @@ public class LectureOrderCancelConsumer {
   private final EnrollmentCommandService enrollmentCommandService;
   private final ObjectMapper objectMapper;
 
-  @KafkaListener(topics = "${topics.order.cancelled}", groupId = GROUP_NAME)
+  @KafkaListener(topics = "${topics.order.lecture-cancelled}", groupId = GROUP_NAME)
   @IdempotentConsumer(GROUP_NAME)
   public void consume(ConsumerRecord<String, String> record) {
     log.info(
