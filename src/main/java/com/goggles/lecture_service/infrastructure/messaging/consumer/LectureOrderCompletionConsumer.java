@@ -7,7 +7,7 @@ import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnr
 import com.goggles.lecture_service.application.enrollment.command.service.EnrollmentCommandService;
 import com.goggles.lecture_service.domain.enrollment.exception.InvalidEnrollmentCompletionEventPayloadException;
 import com.goggles.lecture_service.domain.enrollment.exception.InvalidEnrollmentFieldException;
-import com.goggles.lecture_service.infrastructure.messaging.event.OrderEnrollmentCompletionEvent;
+import com.goggles.lecture_service.infrastructure.messaging.event.LectureOrderCompletionEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -17,20 +17,19 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class OrderEnrollmentCompletionConsumer {
+public class LectureOrderCompletionConsumer {
 
-  public static final String TOPIC = "order.enrollment.completion";
   public static final String GROUP_NAME = "lecture-service.enrollment-completion";
 
   private final EnrollmentCommandService enrollmentCommandService;
   private final ObjectMapper objectMapper;
 
-  @KafkaListener(topics = TOPIC, groupId = GROUP_NAME)
+  @KafkaListener(topics = "${topics.order.completed}", groupId = GROUP_NAME)
   @IdempotentConsumer(GROUP_NAME)
   public void consume(ConsumerRecord<String, String> record) {
     log.info(
         "[Kafka] Received {} | partition={}, offset={}",
-        TOPIC,
+        record.topic(),
         record.partition(),
         record.offset());
 
@@ -39,8 +38,8 @@ public class OrderEnrollmentCompletionConsumer {
 
   private LectureEnrollmentCompleteCommand toCommand(String value) {
     try {
-      OrderEnrollmentCompletionEvent event =
-          objectMapper.readValue(value, OrderEnrollmentCompletionEvent.class);
+      LectureOrderCompletionEvent event =
+          objectMapper.readValue(value, LectureOrderCompletionEvent.class);
       return new LectureEnrollmentCompleteCommand(event.orderId(), event.enrollmentIds());
     } catch (JsonProcessingException | InvalidEnrollmentFieldException e) {
       // payload 가 깨졌거나 필수 필드(orderId/enrollmentIds)가 누락된 경우
