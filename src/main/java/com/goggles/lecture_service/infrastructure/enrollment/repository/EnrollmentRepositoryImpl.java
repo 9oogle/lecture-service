@@ -83,6 +83,8 @@ public class EnrollmentRepositoryImpl implements EnrollmentRepository {
     if (ids == null || ids.isEmpty()) {
       return;
     }
+    // 결제 실패 보상 트랜잭션: RESERVE 상태 데이터는 확정된 적 없으므로
+    // 소프트 삭제 대신 물리 삭제로 완전히 제거합니다.
     jpaRepository.deleteAllByIdInBatch(ids);
   }
 }
