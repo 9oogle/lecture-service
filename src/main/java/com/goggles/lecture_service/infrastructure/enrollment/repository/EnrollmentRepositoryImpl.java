@@ -65,6 +65,9 @@ public class EnrollmentRepositoryImpl implements EnrollmentRepository {
 
   @Override
   public List<UUID> findExpirationTargetIds(LocalDateTime now, int limit) {
-    return jpaRepository.findExpirationTargetIds(now, PageRequest.of(0, limit));
+    return jpaRepository.findExpirationTargetIds(
+        EnrollmentStatus.ACTIVE, // ← 추가
+        now,
+        PageRequest.of(0, limit));
   }
 }
