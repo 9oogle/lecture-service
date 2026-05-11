@@ -7,7 +7,7 @@ permissions:
 
 on:
   push:
-    branches: ["dev", "main"]
+    branches: ["dev", "main","chore/44-lecture-service-dev-deploy"]
   workflow_dispatch:
 
 env:
