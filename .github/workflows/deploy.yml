@@ -3,6 +3,7 @@ name: Deploy
 permissions:
   id-token: write
   contents: read
+  packages: read
 
 on:
   push:
