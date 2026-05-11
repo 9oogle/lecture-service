@@ -6,4 +6,4 @@ services:
       SPRING_PROFILES_ACTIVE: dev
     ports:
       - "9005:9005"
-    restart: unless-stopped
+    restart: on-failure:3
