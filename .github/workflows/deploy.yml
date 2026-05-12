@@ -222,25 +222,45 @@ jobs:
             # Monitoring
             upsert_env MONITORING_HOST "${{ secrets.MONITORING_VM_HOST }}"
             # =====================================================
-            
+
             # Kafka SSL truststore 복원
-                    mkdir -p $APP_DIR/ssl
-                    TRUSTSTORE_B64="${{ secrets.TRUSTSTORE_JKS_B64 }}"
-                    if [ -z "$TRUSTSTORE_B64" ]; then
-                    echo "[SSL] ❌ TRUSTSTORE_JKS_B64 secret이 비어있음"
-                    exit 1
-                    fi
-                    echo "$TRUSTSTORE_B64" | base64 -d > $APP_DIR/ssl/kafka.truststore.jks
-                    FILE_SIZE=$(stat -c%s "$APP_DIR/ssl/kafka.truststore.jks")
-                    echo "[SSL] ✅ 파일 생성 완료 (크기: ${FILE_SIZE} bytes)"
-                    if [ "$FILE_SIZE" -eq 0 ]; then
-                    echo "[SSL] ❌ 파일이 비어있음 — base64 디코딩 실패"
-                    exit 1
-                    fi
+            mkdir -p $APP_DIR/ssl
+            TRUSTSTORE_B64="${{ secrets.TRUSTSTORE_JKS_B64 }}"
+            if [ -z "$TRUSTSTORE_B64" ]; then
+              echo "[SSL] ❌ TRUSTSTORE_JKS_B64 secret이 비어있음"
+              exit 1
+            fi
+            echo "$TRUSTSTORE_B64" | base64 -d > $APP_DIR/ssl/kafka.truststore.jks
+            FILE_SIZE=$(stat -c%s "$APP_DIR/ssl/kafka.truststore.jks")
+            echo "[SSL] ✅ 파일 생성 완료 (크기: ${FILE_SIZE} bytes)"
+            if [ "$FILE_SIZE" -eq 0 ]; then
+              echo "[SSL] ❌ 파일이 비어있음 — base64 디코딩 실패"
+              exit 1
+            fi
+            # [DEBUG-REMOVE] 디버깅 완료 후 제거 ↓↓↓
+            echo "[SSL] 호스트 경로: $(ls -lh $APP_DIR/ssl/kafka.truststore.jks)"
+            echo "[SSL] 파일 타입: $(file $APP_DIR/ssl/kafka.truststore.jks)"
+            # [DEBUG-REMOVE] 디버깅 완료 후 제거 ↑↑↑
+
             # 새 이미지 pull & 재시작
             COMPOSE_FILE="${{ steps.vars.outputs.compose }}"
             docker compose -f $COMPOSE_FILE pull $SERVICE
             docker compose -f $COMPOSE_FILE up -d $SERVICE
+
+            # [DEBUG-REMOVE] 디버깅 완료 후 제거 ↓↓↓
+            # =====================================================
+            # 컨테이너 기동 후 디버그 정보 dump
+            # =====================================================
+            sleep 10
+            CONTAINER_NAME=$(docker compose -f $COMPOSE_FILE ps -q $SERVICE)
+            echo "[DEBUG] 컨테이너 ID: $CONTAINER_NAME"
+            echo "[DEBUG] 컨테이너 내부 /app/ssl/ 확인:"
+            docker exec "$CONTAINER_NAME" ls -lh /app/ssl/ 2>&1 || echo "[DEBUG] /app/ssl/ 확인 실패"
+            echo "[DEBUG] 컨테이너 내부 truststore 위치 검색:"
+            docker exec "$CONTAINER_NAME" find / -name 'kafka.truststore.jks' 2>/dev/null || echo "[DEBUG] find 실패"
+            echo "[DEBUG] 앱 시작 로그 (최근 100줄):"
+            docker logs "$CONTAINER_NAME" --tail 100 2>&1 || echo "[DEBUG] logs 실패"
+            # [DEBUG-REMOVE] 디버깅 완료 후 제거 ↑↑↑
 
             # Health check (30초 간격, 최대 8회)
             echo "Health check 시작... (port: ${{ vars.HEALTH_CHECK_PORT }})"
@@ -252,6 +272,18 @@ jobs:
               fi
               echo "Health check 실패 ($i/8)"
             done
+
+            # [DEBUG-REMOVE] 디버깅 완료 후 제거 ↓↓↓
+            # =====================================================
+            # 헬스체크 실패 후 앱 로그 dump (디버깅용)
+            # =====================================================
+            echo "=================================================="
+            echo "[FATAL] 헬스체크 8회 모두 실패 — 앱 로그 dump"
+            echo "=================================================="
+            CONTAINER_NAME=$(docker compose -f $COMPOSE_FILE ps -q $SERVICE)
+            docker logs "$CONTAINER_NAME" --tail 300 2>&1 || echo "[FATAL] logs 실패"
+            echo "=================================================="
+            # [DEBUG-REMOVE] 디버깅 완료 후 제거 ↑↑↑
 
             # 롤백
             if [ -z "$PREV_TAG" ]; then
