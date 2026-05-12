@@ -22,6 +22,7 @@ public enum EnrollmentErrorCode {
   ENROLLMENT_INVALID_STATUS_FOR_CANCEL("RESERVE 또는 ACTIVE 상태에서만 취소할 수 있습니다."),
   ENROLLMENT_INVALID_STATUS_FOR_EXPIRE("ACTIVE 상태에서만 만료 처리할 수 있습니다."),
   ENROLLMENT_INVALID_STATUS_FOR_ACCESS("ACTIVE 상태에서만 강의에 접근할 수 있습니다."),
+  ENROLLMENT_INVALID_STATUS_FOR_ROLLBACK("RESERVE 상태에서만 롤백할 수 있습니다."),
 
   // 강의 검증
   ENROLLMENT_LECTURE_NOT_PUBLISHED("판매 중인 강의가 아닙니다."),

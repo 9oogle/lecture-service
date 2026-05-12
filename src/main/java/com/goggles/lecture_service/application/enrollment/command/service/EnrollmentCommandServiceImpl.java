@@ -4,6 +4,7 @@ import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnr
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentCompleteCommand;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentReserveCommand;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentReserveResult;
+import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentRollbackCommand;
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
 import com.goggles.lecture_service.domain.enrollment.LectureSnapshot;
 import com.goggles.lecture_service.domain.enrollment.enums.ReserveFailReason;
@@ -136,5 +137,35 @@ public class EnrollmentCommandServiceImpl implements EnrollmentCommandService {
     for (UUID enrollmentId : command.enrollmentIds()) {
       enrollmentMap.get(enrollmentId).cancel();
     }
+  }
+
+  @Override
+  public void rollback(LectureEnrollmentRollbackCommand command) {
+    List<Enrollment> enrollments = enrollmentRepository.findAllByIdIn(command.enrollmentIds());
+
+    if (enrollments.isEmpty()) {
+      log.info(
+          "Enrollment rollback skipped (all enrollments missing). userId={}, requested={}",
+          command.userId(),
+          command.enrollmentIds().size());
+      return;
+    }
+
+    // 존재하는 enrollment 에 대해서만 소유권 + 상태 검증
+    for (Enrollment enrollment : enrollments) {
+      if (!enrollment.getStudentId().equals(command.userId())) {
+        throw new EnrollmentNotOwnedException(EnrollmentErrorCode.ENROLLMENT_NOT_OWNED);
+      }
+      enrollment.validateRollbackable();
+    }
+
+    List<UUID> deletableIds = enrollments.stream().map(Enrollment::getId).toList();
+    enrollmentRepository.deleteAllByIdIn(deletableIds);
+
+    log.info(
+        "Enrollment rollback processed. userId={}, requested={}, deleted={}",
+        command.userId(),
+        command.enrollmentIds().size(),
+        deletableIds.size());
   }
 }

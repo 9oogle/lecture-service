@@ -8,6 +8,7 @@ import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnr
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentCompleteCommand;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentReserveCommand;
 import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentReserveResult;
+import com.goggles.lecture_service.application.enrollment.command.dto.LectureEnrollmentRollbackCommand;
 import com.goggles.lecture_service.application.enrollment.command.service.EnrollmentCommandServiceImpl;
 import com.goggles.lecture_service.domain.enrollment.Enrollment;
 import com.goggles.lecture_service.domain.enrollment.LectureSnapshot;
@@ -359,6 +360,103 @@ class EnrollmentCommandServiceImplTest {
               () ->
                   service.complete(new LectureEnrollmentCompleteCommand(orderId, List.of(missing))))
           .isInstanceOf(EnrollmentNotFoundException.class);
+    }
+
+    // 헬퍼
+    private Enrollment reservedEnrollment(UUID studentId) {
+      LectureSnapshot snapshot =
+          LectureSnapshot.of(UUID.randomUUID(), "스프링 강의", UUID.randomUUID(), "홍길동");
+      return Enrollment.reserve(snapshot, studentId, DurationPolicy.DAYS_365);
+    }
+  }
+
+  @Nested
+  @DisplayName("결제 실패 보상 트랜잭션 롤백")
+  class Rollback {
+
+    @Test
+    @DisplayName("성공: 단건 RESERVE enrollment 물리 삭제")
+    void rollback_singleReserve_success() {
+      Enrollment enrollment = reservedEnrollment(userId);
+      UUID enrollmentId = enrollment.getId();
+      when(enrollmentRepository.findAllByIdIn(List.of(enrollmentId)))
+          .thenReturn(List.of(enrollment));
+
+      service.rollback(new LectureEnrollmentRollbackCommand(List.of(enrollmentId), userId));
+
+      verify(enrollmentRepository).deleteAllByIdIn(List.of(enrollmentId));
+    }
+
+    @Test
+    @DisplayName("성공: 다건 RESERVE enrollment 물리 삭제")
+    void rollback_multipleReserve_success() {
+      Enrollment a = reservedEnrollment(userId);
+      Enrollment b = reservedEnrollment(userId);
+      List<UUID> ids = List.of(a.getId(), b.getId());
+      when(enrollmentRepository.findAllByIdIn(ids)).thenReturn(List.of(a, b));
+
+      service.rollback(new LectureEnrollmentRollbackCommand(ids, userId));
+
+      verify(enrollmentRepository).deleteAllByIdIn(ids);
+    }
+
+    @Test
+    @DisplayName("성공(멱등성): 모든 enrollmentId 미존재 시 삭제 호출 없이 종료")
+    void rollback_allMissing_idempotentSkip() {
+      UUID missing = UUID.randomUUID();
+      when(enrollmentRepository.findAllByIdIn(List.of(missing))).thenReturn(List.of());
+
+      service.rollback(new LectureEnrollmentRollbackCommand(List.of(missing), userId));
+
+      verify(enrollmentRepository, never()).deleteAllByIdIn(anyList());
+    }
+
+    @Test
+    @DisplayName("성공(멱등성): 일부 enrollmentId 미존재 시 존재하는 것만 삭제")
+    void rollback_partiallyMissing_deletesExistingOnly() {
+      Enrollment existing = reservedEnrollment(userId);
+      UUID missing = UUID.randomUUID();
+      List<UUID> requested = List.of(existing.getId(), missing);
+      when(enrollmentRepository.findAllByIdIn(requested)).thenReturn(List.of(existing));
+
+      service.rollback(new LectureEnrollmentRollbackCommand(requested, userId));
+
+      verify(enrollmentRepository).deleteAllByIdIn(List.of(existing.getId()));
+    }
+
+    @Test
+    @DisplayName("실패: 다른 학생 소유 enrollment 롤백 시도")
+    void rollback_notOwned_throws() {
+      UUID otherUser = UUID.randomUUID();
+      Enrollment otherUserEnrollment = reservedEnrollment(otherUser);
+      when(enrollmentRepository.findAllByIdIn(List.of(otherUserEnrollment.getId())))
+          .thenReturn(List.of(otherUserEnrollment));
+
+      assertThatThrownBy(
+              () ->
+                  service.rollback(
+                      new LectureEnrollmentRollbackCommand(
+                          List.of(otherUserEnrollment.getId()), userId)))
+          .isInstanceOf(EnrollmentNotOwnedException.class);
+
+      verify(enrollmentRepository, never()).deleteAllByIdIn(anyList());
+    }
+
+    @Test
+    @DisplayName("실패: ACTIVE 상태(결제 성공) enrollment 롤백 시도 차단")
+    void rollback_activeStatus_throws() {
+      Enrollment enrollment = reservedEnrollment(userId);
+      enrollment.complete(LocalDateTime.now(), UUID.randomUUID()); // RESERVE → ACTIVE
+      when(enrollmentRepository.findAllByIdIn(List.of(enrollment.getId())))
+          .thenReturn(List.of(enrollment));
+
+      assertThatThrownBy(
+              () ->
+                  service.rollback(
+                      new LectureEnrollmentRollbackCommand(List.of(enrollment.getId()), userId)))
+          .isInstanceOf(InvalidEnrollmentStatusException.class);
+
+      verify(enrollmentRepository, never()).deleteAllByIdIn(anyList());
     }
 
     // 헬퍼
