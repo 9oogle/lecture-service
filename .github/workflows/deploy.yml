@@ -222,7 +222,21 @@ jobs:
             # Monitoring
             upsert_env MONITORING_HOST "${{ secrets.MONITORING_VM_HOST }}"
             # =====================================================
-
+            
+            # Kafka SSL truststore 복원
+                    mkdir -p $APP_DIR/ssl
+                    TRUSTSTORE_B64="${{ secrets.TRUSTSTORE_JKS_B64 }}"
+                    if [ -z "$TRUSTSTORE_B64" ]; then
+                    echo "[SSL] ❌ TRUSTSTORE_JKS_B64 secret이 비어있음"
+                    exit 1
+                    fi
+                    echo "$TRUSTSTORE_B64" | base64 -d > $APP_DIR/ssl/kafka.truststore.jks
+                    FILE_SIZE=$(stat -c%s "$APP_DIR/ssl/kafka.truststore.jks")
+                    echo "[SSL] ✅ 파일 생성 완료 (크기: ${FILE_SIZE} bytes)"
+                    if [ "$FILE_SIZE" -eq 0 ]; then
+                    echo "[SSL] ❌ 파일이 비어있음 — base64 디코딩 실패"
+                    exit 1
+                    fi
             # 새 이미지 pull & 재시작
             COMPOSE_FILE="${{ steps.vars.outputs.compose }}"
             docker compose -f $COMPOSE_FILE pull $SERVICE
