@@ -1,6 +1,7 @@
 package com.goggles.lecture_service.presentation.lecture.dto;
 
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterReorderCommand;
+import com.goggles.lecture_service.domain._common.UserType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
@@ -12,7 +13,7 @@ public record ChapterReorderRequest(
     @NotEmpty(message = "챕터 순서 변경 목록은 비어 있을 수 없습니다.")
         List<@Valid @NotNull ChapterOrderRequest> orders) {
 
-  public ChapterReorderCommand toCommand(UUID lectureId, UUID actorId, String actorRole) {
+  public ChapterReorderCommand toCommand(UUID lectureId, UUID actorId, UserType actorRole) {
     List<ChapterReorderCommand.ChapterOrderCommand> mappedOrders =
         orders == null
             ? null

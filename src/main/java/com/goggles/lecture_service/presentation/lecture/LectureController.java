@@ -16,6 +16,7 @@ import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdate
 import com.goggles.lecture_service.application.lecture.query.dto.LectureDetail;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureListQuery;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureSummary;
+import com.goggles.lecture_service.domain._common.UserType;
 import com.goggles.lecture_service.presentation.lecture.dto.ChapterCreateRequest;
 import com.goggles.lecture_service.presentation.lecture.dto.ChapterCreateResponse;
 import com.goggles.lecture_service.presentation.lecture.dto.ChapterDeleteResponse;
@@ -66,16 +67,18 @@ public class LectureController {
     return lectureService.getLectureDetail(lectureId);
   }
 
-  // 강의 생성
+  // 강의 생성 (강사 또는 MASTER)
   // TODO: 추후 강사 활성/비활성 상태 검증이 필요하면 user-service Feign 호출 추가
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public LectureCreateResponse createLecture(
       @RequestHeader("X-User-Id") UUID instructorId,
       @RequestHeader("X-User-Name") String instructorName,
+      @RequestHeader("X-User-Role") String userRole,
       @Valid @RequestBody LectureCreateRequest request) {
     return LectureCreateResponse.from(
-        lectureService.createLecture(request.toCommand(instructorId, instructorName)));
+        lectureService.createLecture(
+            request.toCommand(instructorId, instructorName, UserType.from(userRole))));
   }
 
   // 강의 수정(DRAFT 상태에서만, 강사 본인 또는 MASTER)
@@ -87,7 +90,7 @@ public class LectureController {
       @Valid @RequestBody LectureUpdateRequest request) {
 
     LectureUpdateResult result =
-        lectureService.updateLecture(request.toCommand(lectureId, userId, userRole));
+        lectureService.updateLecture(request.toCommand(lectureId, userId, UserType.from(userRole)));
 
     return LectureUpdateResponse.from(result);
   }
@@ -96,25 +99,26 @@ public class LectureController {
   @PatchMapping("/{lectureId}/review-requests")
   public LectureStatusChangeResponse submitReview(
       @RequestHeader("X-User-Id") UUID userId,
-      @RequestHeader(value = "X-User-Role") String userRole,
+      @RequestHeader("X-User-Role") String userRole,
       @PathVariable UUID lectureId) {
 
     LectureStatusChangeResult result =
-        lectureService.submitReview(new LectureSubmitReviewCommand(lectureId, userId, userRole));
+        lectureService.submitReview(
+            new LectureSubmitReviewCommand(lectureId, userId, UserType.from(userRole)));
 
     return LectureStatusChangeResponse.from(result);
   }
 
-  // 관리자: 승인 (Status 변경)
+  // 관리자: 승인/반려/숨김 (Status 변경)
   @PatchMapping("/{lectureId}/status")
   public LectureStatusChangeResponse changeStatus(
       @RequestHeader("X-User-Id") UUID userId,
-      @RequestHeader(value = "X-User-Role") String userRole,
+      @RequestHeader("X-User-Role") String userRole,
       @PathVariable UUID lectureId,
       @Valid @RequestBody LectureStatusChangeRequest request) {
 
     LectureStatusChangeResult result =
-        lectureService.changeStatus(request.toCommand(lectureId, userId, userRole));
+        lectureService.changeStatus(request.toCommand(lectureId, userId, UserType.from(userRole)));
 
     return LectureStatusChangeResponse.from(result);
   }
@@ -127,21 +131,22 @@ public class LectureController {
       @PathVariable UUID lectureId) {
 
     LectureDeleteResult result =
-        lectureService.deleteLecture(new LectureDeleteCommand(lectureId, userId, userRole));
+        lectureService.deleteLecture(
+            new LectureDeleteCommand(lectureId, userId, UserType.from(userRole)));
 
     return LectureDeleteResponse.from(result);
   }
 
-  // 챕터 생성
+  // 챕터 생성 (DRAFT 상태에서만, 강사 본인 또는 MASTER)
   @PostMapping("/{lectureId}/chapters")
   @ResponseStatus(HttpStatus.CREATED)
   public ChapterCreateResponse createChapter(
       @RequestHeader("X-User-Id") UUID userId,
-      @RequestHeader("X-User-Name") String userName,
-      // TODO(#3 user-service 로그인 API 연동 후): instructorId 일치 검증
+      @RequestHeader("X-User-Role") String userRole,
       @PathVariable UUID lectureId,
       @Valid @RequestBody ChapterCreateRequest request) {
-    ChapterCreateResult result = lectureService.createChapter(request.toCommand(lectureId));
+    ChapterCreateResult result =
+        lectureService.createChapter(request.toCommand(lectureId, userId, UserType.from(userRole)));
     return ChapterCreateResponse.from(result);
   }
 
@@ -155,7 +160,8 @@ public class LectureController {
       @Valid @RequestBody ChapterUpdateRequest request) {
 
     ChapterUpdateResult result =
-        lectureService.updateChapter(request.toCommand(lectureId, chapterId, userId, userRole));
+        lectureService.updateChapter(
+            request.toCommand(lectureId, chapterId, userId, UserType.from(userRole)));
 
     return ChapterUpdateResponse.from(result);
   }
@@ -170,7 +176,7 @@ public class LectureController {
 
     ChapterDeleteResult result =
         lectureService.deleteChapter(
-            new ChapterDeleteCommand(lectureId, chapterId, userId, userRole));
+            new ChapterDeleteCommand(lectureId, chapterId, userId, UserType.from(userRole)));
 
     return ChapterDeleteResponse.from(result);
   }
@@ -184,7 +190,8 @@ public class LectureController {
       @Valid @RequestBody ChapterReorderRequest request) {
 
     ChapterReorderResult result =
-        lectureService.reorderChapters(request.toCommand(lectureId, userId, userRole));
+        lectureService.reorderChapters(
+            request.toCommand(lectureId, userId, UserType.from(userRole)));
 
     return ChapterReorderResponse.from(result);
   }

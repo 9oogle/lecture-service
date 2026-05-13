@@ -17,6 +17,7 @@ import com.goggles.lecture_service.application.lecture.command.dto.LectureStatus
 import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmitReviewCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
+import com.goggles.lecture_service.domain._common.UserType;
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureStatusException;
 import com.goggles.lecture_service.domain.lecture.exception.LectureAccessDeniedException;
@@ -34,12 +35,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class LectureCommandServiceImpl implements LectureCommandService {
 
-  private static final String ROLE_MASTER = "MASTER";
   private final LectureRepository lectureRepository;
 
   @Override
   public LectureCreateResult createLecture(LectureCreateCommand command) {
-    // Todo: APPROVED 상태 강사만 생성 가능 조건 추가
+    validateInstructor(command.actorRole());
+    // Todo: APPROVED 상태 강사만 생성 가능 조건 추가 (user-service Feign 연동 후)
+
     Lecture lecture =
         Lecture.create(
             command.instructorId(),
@@ -61,6 +63,8 @@ public class LectureCommandServiceImpl implements LectureCommandService {
         lectureRepository
             .findById(command.lectureId())
             .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
+
+    validateLectureAccess(lecture, command.actorId(), command.actorRole());
 
     UUID chapterId =
         lecture.addChapter(
@@ -187,7 +191,7 @@ public class LectureCommandServiceImpl implements LectureCommandService {
   }
 
   // 강의 소유자(강사) 또는 관리자(MASTER)만 통과
-  private void validateLectureAccess(Lecture lecture, UUID actorId, String actorRole) {
+  private void validateLectureAccess(Lecture lecture, UUID actorId, UserType actorRole) {
     if (lecture.isOwnedBy(actorId) || isAdmin(actorRole)) {
       return;
     }
@@ -202,16 +206,20 @@ public class LectureCommandServiceImpl implements LectureCommandService {
   }
 
   // 관리자(MASTER)만 통과
-  private void validateAdmin(String actorRole) {
+  private void validateAdmin(UserType actorRole) {
     if (!isAdmin(actorRole)) {
       throw new LectureAccessDeniedException();
     }
   }
 
-  private boolean isAdmin(String actorRole) {
-    // TODO(#로그인): user-service 로그인 API 연동 후 공통 UserRole enum 으로 교체
-    //   위에 상수도 제거
-    // return actorRole == UserRole.MASTER;
-    return ROLE_MASTER.equals(actorRole);
+  // 강사 또는 관리자(MASTER)만 통과 (강의 생성용)
+  private void validateInstructor(UserType actorRole) {
+    if (actorRole != UserType.INSTRUCTOR && !isAdmin(actorRole)) {
+      throw new LectureAccessDeniedException();
+    }
+  }
+
+  private boolean isAdmin(UserType actorRole) {
+    return actorRole == UserType.MASTER;
   }
 }

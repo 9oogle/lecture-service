@@ -1,6 +1,7 @@
 package com.goggles.lecture_service.presentation.lecture.dto;
 
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
+import com.goggles.lecture_service.domain._common.UserType;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -17,7 +18,7 @@ public record LectureUpdateRequest(
     @NotNull(message = "수강 기간 정책은 필수입니다.") DurationPolicy durationPolicy,
     @NotNull(message = "가격은 필수입니다.") @Min(value = 0, message = "가격은 0원 이상이어야 합니다.") Long price) {
 
-  public LectureUpdateCommand toCommand(UUID lectureId, UUID actorId, String actorRole) {
+  public LectureUpdateCommand toCommand(UUID lectureId, UUID actorId, UserType actorRole) {
     return new LectureUpdateCommand(
         lectureId,
         actorId,

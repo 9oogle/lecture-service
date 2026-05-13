@@ -1,6 +1,7 @@
 package com.goggles.lecture_service.presentation.lecture.dto;
 
 import com.goggles.lecture_service.application.lecture.command.dto.ChapterUpdateCommand;
+import com.goggles.lecture_service.domain._common.UserType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,7 +14,7 @@ public record ChapterUpdateRequest(
         Integer durationSeconds) {
 
   public ChapterUpdateCommand toCommand(
-      UUID lectureId, UUID chapterId, UUID actorId, String actorRole) {
+      UUID lectureId, UUID chapterId, UUID actorId, UserType actorRole) {
     return new ChapterUpdateCommand(
         lectureId, chapterId, actorId, actorRole, title, content, durationSeconds);
   }

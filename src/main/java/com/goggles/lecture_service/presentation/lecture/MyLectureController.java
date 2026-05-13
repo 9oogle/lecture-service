@@ -7,6 +7,8 @@ import com.goggles.lecture_service.application.enrollment.query.dto.EnrolledLect
 import com.goggles.lecture_service.application.enrollment.query.service.EnrollmentQueryService;
 import com.goggles.lecture_service.application.lecture.LectureService;
 import com.goggles.lecture_service.application.lecture.query.dto.LectureSummary;
+import com.goggles.lecture_service.domain._common.UserType;
+import com.goggles.lecture_service.domain.lecture.exception.LectureAccessDeniedException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,10 +29,16 @@ public class MyLectureController {
   @GetMapping("/enrolled")
   public CommonPageResponse<EnrolledLectureResult> getEnrolledLectures(
       @RequestHeader("X-User-Id") UUID studentId,
+      @RequestHeader("X-User-Role") String userRole,
       CommonPageRequest pageRequest,
       @RequestParam(required = false) String keyword,
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String sort) {
+
+    UserType actorRole = UserType.from(userRole);
+    if (actorRole != UserType.STUDENT) {
+      throw new LectureAccessDeniedException();
+    }
 
     return enrollmentQueryService.getEnrolledLectures(
         EnrolledLectureQuery.of(studentId, keyword, status, sort, pageRequest));
@@ -39,7 +47,15 @@ public class MyLectureController {
   // 나의 강의 목록 조회 (강사) - 본인 소유 강의의 모든 상태 노출
   @GetMapping("/teaching")
   public CommonPageResponse<LectureSummary> getTeachingLectures(
-      @RequestHeader("X-User-Id") UUID instructorId, CommonPageRequest pageRequest) {
+      @RequestHeader("X-User-Id") UUID instructorId,
+      @RequestHeader("X-User-Role") String userRole,
+      CommonPageRequest pageRequest) {
+
+    UserType actorRole = UserType.from(userRole);
+    if (actorRole != UserType.INSTRUCTOR && actorRole != UserType.MASTER) {
+      throw new LectureAccessDeniedException();
+    }
+
     return lectureService.getTeachingLectures(instructorId, pageRequest);
   }
 }

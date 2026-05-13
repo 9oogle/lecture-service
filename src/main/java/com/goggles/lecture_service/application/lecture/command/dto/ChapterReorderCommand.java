@@ -1,5 +1,6 @@
 package com.goggles.lecture_service.application.lecture.command.dto;
 
+import com.goggles.lecture_service.domain._common.UserType;
 import com.goggles.lecture_service.domain.lecture.exception.InvalidLectureFieldException;
 import com.goggles.lecture_service.domain.lecture.exception.LectureErrorCode;
 import java.util.HashSet;
@@ -7,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record ChapterReorderCommand(
-    UUID lectureId, UUID actorId, String actorRole, List<ChapterOrderCommand> orders) {
+    UUID lectureId, UUID actorId, UserType actorRole, List<ChapterOrderCommand> orders) {
 
   public ChapterReorderCommand {
     if (lectureId == null) {
@@ -16,7 +17,7 @@ public record ChapterReorderCommand(
     if (actorId == null) {
       throw new InvalidLectureFieldException(LectureErrorCode.USER_ID_REQUIRED);
     }
-    if (actorRole == null || actorRole.isBlank()) {
+    if (actorRole == null) {
       throw new InvalidLectureFieldException(LectureErrorCode.USER_ROLE_REQUIRED);
     }
     if (orders == null) {

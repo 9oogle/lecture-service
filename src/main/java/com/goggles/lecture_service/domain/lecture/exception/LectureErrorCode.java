@@ -24,6 +24,7 @@ public enum LectureErrorCode {
   // 요청 필드 검증
   USER_ID_REQUIRED("사용자 ID는 필수입니다."),
   USER_ROLE_REQUIRED("사용자 권한은 필수입니다."),
+  USER_ROLE_INVALID("유효하지 않은 사용자 권한입니다."),
   LECTURE_DURATION_POLICY_REQUIRED("수강 기간 정책은 필수입니다."),
 
   // 챕터

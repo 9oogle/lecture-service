@@ -22,6 +22,7 @@ import com.goggles.lecture_service.application.lecture.command.dto.LectureSubmit
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateCommand;
 import com.goggles.lecture_service.application.lecture.command.dto.LectureUpdateResult;
 import com.goggles.lecture_service.application.lecture.command.service.LectureCommandServiceImpl;
+import com.goggles.lecture_service.domain._common.UserType;
 import com.goggles.lecture_service.domain.lecture.Lecture;
 import com.goggles.lecture_service.domain.lecture.enums.DurationPolicy;
 import com.goggles.lecture_service.domain.lecture.enums.LectureStatus;
@@ -60,14 +61,7 @@ class LectureCommandServiceImplTest {
     instructorId = UUID.randomUUID();
     command =
         new LectureCreateCommand(
-            instructorId,
-            "강사이름",
-            "IT",
-            "자바 강의",
-            "자바 기초부터 심화까지",
-            "강의 설명입니다.",
-            DurationPolicy.DAYS_365,
-            50000L);
+            instructorId, "강사이름", UserType.INSTRUCTOR, "IT", "자바 강의", "부제", "설명", null, 50000L);
   }
 
   @Nested
@@ -95,7 +89,8 @@ class LectureCommandServiceImplTest {
     void createLecture_nullDurationPolicy_defaultsToDays365() {
       // given
       LectureCreateCommand nullPolicyCommand =
-          new LectureCreateCommand(instructorId, "강사이름", "IT", "자바 강의", "부제", "설명", null, 50000L);
+          new LectureCreateCommand(
+              instructorId, "강사이름", UserType.INSTRUCTOR, "IT", "자바 강의", "부제", "설명", null, 50000L);
       when(lectureRepository.save(any(Lecture.class))).thenAnswer(inv -> inv.getArgument(0));
 
       // when
@@ -112,15 +107,7 @@ class LectureCommandServiceImplTest {
       // given
       LectureCreateCommand invalidCommand =
           new LectureCreateCommand(
-              instructorId,
-              "강사이름",
-              "", // 빈 카테고리
-              "자바 강의",
-              "부제",
-              "설명",
-              DurationPolicy.DAYS_365,
-              50000L);
-
+              instructorId, "강사이름", UserType.INSTRUCTOR, null, "자바 강의", "부제", "설명", null, 50000L);
       // when & then
       assertThatThrownBy(() -> lectureCommandService.createLecture(invalidCommand))
           .isInstanceOf(InvalidCategoryException.class);
@@ -133,7 +120,15 @@ class LectureCommandServiceImplTest {
       // given
       LectureCreateCommand invalidCommand =
           new LectureCreateCommand(
-              instructorId, "강사이름", "IT", "자바 강의", "부제", "설명", DurationPolicy.DAYS_365, -1000L);
+              instructorId,
+              "강사이름",
+              UserType.INSTRUCTOR,
+              "IT",
+              "자바 강의",
+              "부제",
+              "설명",
+              DurationPolicy.DAYS_365,
+              -1000L);
 
       // when & then
       assertThatThrownBy(() -> lectureCommandService.createLecture(invalidCommand))
@@ -147,7 +142,15 @@ class LectureCommandServiceImplTest {
       // given
       LectureCreateCommand invalidCommand =
           new LectureCreateCommand(
-              instructorId, "강사이름", "IT", "", "부제", "설명", DurationPolicy.DAYS_365, 50000L);
+              instructorId,
+              "강사이름",
+              UserType.INSTRUCTOR,
+              "IT",
+              "",
+              "부제",
+              "설명",
+              DurationPolicy.DAYS_365,
+              50000L);
 
       // when & then
       assertThatThrownBy(() -> lectureCommandService.createLecture(invalidCommand))
@@ -177,7 +180,8 @@ class LectureCommandServiceImplTest {
     void createChapter_success() {
       // given
       ChapterCreateCommand chapterCommand =
-          new ChapterCreateCommand(lectureId, "1강", "자바 소개", 1, 600);
+          new ChapterCreateCommand(
+              lectureId, instructorId, UserType.INSTRUCTOR, "1강", "자바 소개", 1, 600);
 
       when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
 
@@ -198,7 +202,8 @@ class LectureCommandServiceImplTest {
       // given
       UUID notFoundId = UUID.randomUUID();
       ChapterCreateCommand chapterCommand =
-          new ChapterCreateCommand(notFoundId, "1강", "자바 소개", 1, 600);
+          new ChapterCreateCommand(
+              notFoundId, instructorId, UserType.INSTRUCTOR, "1강", "자바 소개", 1, 600);
 
       when(lectureRepository.findById(notFoundId)).thenReturn(Optional.empty());
 
@@ -217,7 +222,9 @@ class LectureCommandServiceImplTest {
       lecture.addChapter("dummy", "dummy", 1, 600);
       lecture.submitForReview();
 
-      ChapterCreateCommand chapterCommand = new ChapterCreateCommand(lectureId, "2강", "내용", 2, 600);
+      ChapterCreateCommand chapterCommand =
+          new ChapterCreateCommand(
+              lectureId, instructorId, UserType.INSTRUCTOR, "2강", "내용", 2, 600);
       when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
 
       // when & then
@@ -232,7 +239,8 @@ class LectureCommandServiceImplTest {
       lecture.addChapter("1강", "내용", 1, 600);
 
       ChapterCreateCommand chapterCommand =
-          new ChapterCreateCommand(lectureId, "다른강", "내용", 1, 600);
+          new ChapterCreateCommand(
+              lectureId, instructorId, UserType.INSTRUCTOR, "다른강", "내용", 1, 600);
       when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
 
       // when & then
@@ -244,7 +252,8 @@ class LectureCommandServiceImplTest {
     @DisplayName("실패: durationSeconds = 0 이면 예외 발생 (정책 강화)")
     void createChapter_zeroDuration_throws() {
       // given
-      ChapterCreateCommand chapterCommand = new ChapterCreateCommand(lectureId, "1강", "내용", 1, 0);
+      ChapterCreateCommand chapterCommand =
+          new ChapterCreateCommand(lectureId, instructorId, UserType.INSTRUCTOR, "1강", "내용", 1, 0);
       when(lectureRepository.findById(lectureId)).thenReturn(Optional.of(lecture));
 
       // when & then
@@ -269,7 +278,7 @@ class LectureCommandServiceImplTest {
               new LectureUpdateCommand(
                   lecture.getId(),
                   instructorId,
-                  "INSTRUCTOR",
+                  UserType.INSTRUCTOR,
                   "BACKEND",
                   "수정된 제목",
                   "수정된 부제",
@@ -293,7 +302,7 @@ class LectureCommandServiceImplTest {
               new LectureUpdateCommand(
                   lecture.getId(),
                   master,
-                  "MASTER",
+                  UserType.MASTER,
                   "BACKEND",
                   "수정된 제목",
                   null,
@@ -316,7 +325,7 @@ class LectureCommandServiceImplTest {
                       new LectureUpdateCommand(
                           lectureId,
                           UUID.randomUUID(),
-                          "INSTRUCTOR",
+                          UserType.INSTRUCTOR,
                           "BACKEND",
                           "제목",
                           null,
@@ -339,7 +348,7 @@ class LectureCommandServiceImplTest {
                       new LectureUpdateCommand(
                           lecture.getId(),
                           instructorId,
-                          "INSTRUCTOR",
+                          UserType.INSTRUCTOR,
                           "BACKEND",
                           "제목",
                           null,
@@ -362,7 +371,7 @@ class LectureCommandServiceImplTest {
                       new LectureUpdateCommand(
                           lecture.getId(),
                           otherInstructor,
-                          "INSTRUCTOR",
+                          UserType.INSTRUCTOR,
                           "BACKEND",
                           "제목",
                           null,
@@ -380,7 +389,7 @@ class LectureCommandServiceImplTest {
                   new LectureUpdateCommand(
                       null,
                       UUID.randomUUID(),
-                      "INSTRUCTOR",
+                      UserType.INSTRUCTOR,
                       "BACKEND",
                       "제목",
                       null,
@@ -398,7 +407,7 @@ class LectureCommandServiceImplTest {
                   new LectureUpdateCommand(
                       UUID.randomUUID(),
                       UUID.randomUUID(),
-                      "  ",
+                      null,
                       "BACKEND",
                       "제목",
                       null,
@@ -416,7 +425,7 @@ class LectureCommandServiceImplTest {
                   new LectureUpdateCommand(
                       UUID.randomUUID(),
                       UUID.randomUUID(),
-                      "INSTRUCTOR",
+                      UserType.INSTRUCTOR,
                       "BACKEND",
                       "제목",
                       null,
@@ -440,7 +449,7 @@ class LectureCommandServiceImplTest {
 
       LectureStatusChangeResult result =
           lectureCommandService.submitReview(
-              new LectureSubmitReviewCommand(lecture.getId(), instructorId, "INSTRUCTOR"));
+              new LectureSubmitReviewCommand(lecture.getId(), instructorId, UserType.INSTRUCTOR));
 
       assertThat(result.status()).isEqualTo(LectureStatus.PENDING_REVIEW);
     }
@@ -456,7 +465,7 @@ class LectureCommandServiceImplTest {
               () ->
                   lectureCommandService.submitReview(
                       new LectureSubmitReviewCommand(
-                          lecture.getId(), otherInstructor, "INSTRUCTOR")))
+                          lecture.getId(), otherInstructor, UserType.INSTRUCTOR)))
           .isInstanceOf(LectureAccessDeniedException.class);
     }
 
@@ -471,7 +480,7 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   lectureCommandService.submitReview(
-                      new LectureSubmitReviewCommand(lecture.getId(), master, "MASTER")))
+                      new LectureSubmitReviewCommand(lecture.getId(), master, UserType.MASTER)))
           .isInstanceOf(LectureAccessDeniedException.class);
     }
 
@@ -485,7 +494,8 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   lectureCommandService.submitReview(
-                      new LectureSubmitReviewCommand(lecture.getId(), instructorId, "INSTRUCTOR")))
+                      new LectureSubmitReviewCommand(
+                          lecture.getId(), instructorId, UserType.INSTRUCTOR)))
           .isInstanceOf(InvalidLectureStatusException.class);
     }
 
@@ -499,7 +509,8 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   lectureCommandService.submitReview(
-                      new LectureSubmitReviewCommand(lecture.getId(), instructorId, "INSTRUCTOR")))
+                      new LectureSubmitReviewCommand(
+                          lecture.getId(), instructorId, UserType.INSTRUCTOR)))
           .isInstanceOf(InvalidLectureFieldException.class);
     }
 
@@ -512,7 +523,8 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   lectureCommandService.submitReview(
-                      new LectureSubmitReviewCommand(lectureId, UUID.randomUUID(), "INSTRUCTOR")))
+                      new LectureSubmitReviewCommand(
+                          lectureId, UUID.randomUUID(), UserType.INSTRUCTOR)))
           .isInstanceOf(LectureNotFoundException.class);
     }
 
@@ -520,15 +532,15 @@ class LectureCommandServiceImplTest {
     @DisplayName("실패: Command 검증 - lectureId/actorId null, actorRole blank")
     void submitReview_commandValidation_throws() {
       assertThatThrownBy(
-              () -> new LectureSubmitReviewCommand(null, UUID.randomUUID(), "INSTRUCTOR"))
+              () -> new LectureSubmitReviewCommand(null, UUID.randomUUID(), UserType.INSTRUCTOR))
           .isInstanceOf(InvalidLectureFieldException.class);
 
       assertThatThrownBy(
-              () -> new LectureSubmitReviewCommand(UUID.randomUUID(), null, "INSTRUCTOR"))
+              () -> new LectureSubmitReviewCommand(UUID.randomUUID(), null, UserType.INSTRUCTOR))
           .isInstanceOf(InvalidLectureFieldException.class);
 
       assertThatThrownBy(
-              () -> new LectureSubmitReviewCommand(UUID.randomUUID(), UUID.randomUUID(), "  "))
+              () -> new LectureSubmitReviewCommand(UUID.randomUUID(), UUID.randomUUID(), null))
           .isInstanceOf(InvalidLectureFieldException.class);
     }
   } // 강의 요청 끝
@@ -548,7 +560,7 @@ class LectureCommandServiceImplTest {
       LectureStatusChangeResult result =
           lectureCommandService.changeStatus(
               new LectureStatusChangeCommand(
-                  lecture.getId(), masterId, "MASTER", LectureStatus.PUBLISHED, null));
+                  lecture.getId(), masterId, UserType.MASTER, LectureStatus.PUBLISHED, null));
 
       assertThat(result.lectureId()).isEqualTo(lecture.getId());
       assertThat(result.status()).isEqualTo(LectureStatus.PUBLISHED);
@@ -568,7 +580,7 @@ class LectureCommandServiceImplTest {
       LectureStatusChangeResult result =
           lectureCommandService.changeStatus(
               new LectureStatusChangeCommand(
-                  lecture.getId(), masterId, "MASTER", LectureStatus.DRAFT, reason));
+                  lecture.getId(), masterId, UserType.MASTER, LectureStatus.DRAFT, reason));
 
       assertThat(result.lectureId()).isEqualTo(lecture.getId());
       assertThat(result.status()).isEqualTo(LectureStatus.DRAFT);
@@ -588,7 +600,7 @@ class LectureCommandServiceImplTest {
       LectureStatusChangeResult result =
           lectureCommandService.changeStatus(
               new LectureStatusChangeCommand(
-                  lecture.getId(), masterId, "MASTER", LectureStatus.HIDDEN, null));
+                  lecture.getId(), masterId, UserType.MASTER, LectureStatus.HIDDEN, null));
 
       assertThat(result.lectureId()).isEqualTo(lecture.getId());
       assertThat(result.status()).isEqualTo(LectureStatus.HIDDEN);
@@ -608,7 +620,7 @@ class LectureCommandServiceImplTest {
                       new LectureStatusChangeCommand(
                           lecture.getId(),
                           UUID.randomUUID(),
-                          "INSTRUCTOR",
+                          UserType.INSTRUCTOR,
                           LectureStatus.PUBLISHED,
                           null)))
           .isInstanceOf(LectureAccessDeniedException.class);
@@ -625,7 +637,11 @@ class LectureCommandServiceImplTest {
               () ->
                   lectureCommandService.changeStatus(
                       new LectureStatusChangeCommand(
-                          lectureId, UUID.randomUUID(), "MASTER", LectureStatus.PUBLISHED, null)))
+                          lectureId,
+                          UUID.randomUUID(),
+                          UserType.MASTER,
+                          LectureStatus.PUBLISHED,
+                          null)))
           .isInstanceOf(LectureNotFoundException.class);
     }
 
@@ -641,7 +657,11 @@ class LectureCommandServiceImplTest {
               () ->
                   lectureCommandService.changeStatus(
                       new LectureStatusChangeCommand(
-                          lecture.getId(), masterId, "MASTER", LectureStatus.PUBLISHED, null)))
+                          lecture.getId(),
+                          masterId,
+                          UserType.MASTER,
+                          LectureStatus.PUBLISHED,
+                          null)))
           .isInstanceOf(InvalidLectureStatusException.class);
     }
 
@@ -651,7 +671,11 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   new LectureStatusChangeCommand(
-                      UUID.randomUUID(), UUID.randomUUID(), "MASTER", LectureStatus.DRAFT, "  "))
+                      UUID.randomUUID(),
+                      UUID.randomUUID(),
+                      UserType.MASTER,
+                      LectureStatus.DRAFT,
+                      null))
           .isInstanceOf(InvalidLectureFieldException.class);
     }
 
@@ -668,7 +692,7 @@ class LectureCommandServiceImplTest {
                       new LectureStatusChangeCommand(
                           lecture.getId(),
                           UUID.randomUUID(),
-                          "MASTER",
+                          UserType.MASTER,
                           LectureStatus.PENDING_REVIEW,
                           null)))
           .isInstanceOf(InvalidLectureStatusException.class);
@@ -680,25 +704,25 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   new LectureStatusChangeCommand(
-                      null, UUID.randomUUID(), "MASTER", LectureStatus.PUBLISHED, null))
+                      null, UUID.randomUUID(), UserType.MASTER, LectureStatus.PUBLISHED, null))
           .isInstanceOf(InvalidLectureFieldException.class);
 
       assertThatThrownBy(
               () ->
                   new LectureStatusChangeCommand(
-                      UUID.randomUUID(), null, "MASTER", LectureStatus.PUBLISHED, null))
+                      UUID.randomUUID(), null, UserType.MASTER, LectureStatus.PUBLISHED, null))
           .isInstanceOf(InvalidLectureFieldException.class);
 
       assertThatThrownBy(
               () ->
                   new LectureStatusChangeCommand(
-                      UUID.randomUUID(), UUID.randomUUID(), "  ", LectureStatus.PUBLISHED, null))
+                      UUID.randomUUID(), UUID.randomUUID(), null, LectureStatus.PUBLISHED, null))
           .isInstanceOf(InvalidLectureFieldException.class);
 
       assertThatThrownBy(
               () ->
                   new LectureStatusChangeCommand(
-                      UUID.randomUUID(), UUID.randomUUID(), "MASTER", null, null))
+                      UUID.randomUUID(), UUID.randomUUID(), UserType.MASTER, null, null))
           .isInstanceOf(InvalidLectureFieldException.class);
     }
   } // 관리자 강의 상태 변경 끝
@@ -716,7 +740,7 @@ class LectureCommandServiceImplTest {
 
       LectureDeleteResult result =
           lectureCommandService.deleteLecture(
-              new LectureDeleteCommand(lecture.getId(), instructorId, "INSTRUCTOR"));
+              new LectureDeleteCommand(lecture.getId(), instructorId, UserType.INSTRUCTOR));
 
       assertThat(result.lectureId()).isEqualTo(lecture.getId());
       assertThat(lecture.getDeletedAt()).isNotNull();
@@ -731,7 +755,7 @@ class LectureCommandServiceImplTest {
       when(lectureRepository.findById(lecture.getId())).thenReturn(Optional.of(lecture));
 
       lectureCommandService.deleteLecture(
-          new LectureDeleteCommand(lecture.getId(), master, "MASTER"));
+          new LectureDeleteCommand(lecture.getId(), master, UserType.MASTER));
 
       assertThat(lecture.getDeletedBy()).isEqualTo(master);
     }
@@ -746,7 +770,7 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   lectureCommandService.deleteLecture(
-                      new LectureDeleteCommand(lecture.getId(), instructorId, "INSTRUCTOR")))
+                      new LectureDeleteCommand(lecture.getId(), instructorId, UserType.INSTRUCTOR)))
           .isInstanceOf(InvalidLectureStatusException.class);
     }
 
@@ -760,7 +784,7 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   lectureCommandService.deleteLecture(
-                      new LectureDeleteCommand(lecture.getId(), stranger, "STUDENT")))
+                      new LectureDeleteCommand(lecture.getId(), stranger, UserType.STUDENT)))
           .isInstanceOf(LectureAccessDeniedException.class);
     }
   }
@@ -781,7 +805,13 @@ class LectureCommandServiceImplTest {
       ChapterUpdateResult result =
           lectureCommandService.updateChapter(
               new ChapterUpdateCommand(
-                  lecture.getId(), chapterId, instructorId, "INSTRUCTOR", "수정된 챕터", "수정된 내용", 900));
+                  lecture.getId(),
+                  chapterId,
+                  instructorId,
+                  UserType.INSTRUCTOR,
+                  "수정된 챕터",
+                  "수정된 내용",
+                  900));
 
       assertThat(result.lectureId()).isEqualTo(lecture.getId());
       assertThat(result.chapterId()).isEqualTo(chapterId);
@@ -802,7 +832,7 @@ class LectureCommandServiceImplTest {
       ChapterUpdateResult result =
           lectureCommandService.updateChapter(
               new ChapterUpdateCommand(
-                  lecture.getId(), chapterId, master, "MASTER", "수정된 챕터", "수정된 내용", 900));
+                  lecture.getId(), chapterId, master, UserType.MASTER, "수정된 챕터", "수정된 내용", 900));
 
       assertThat(result.lectureId()).isEqualTo(lecture.getId());
       assertThat(result.chapterId()).isEqualTo(chapterId);
@@ -820,7 +850,13 @@ class LectureCommandServiceImplTest {
               () ->
                   lectureCommandService.updateChapter(
                       new ChapterUpdateCommand(
-                          lectureId, chapterId, UUID.randomUUID(), "INSTRUCTOR", "제목", "내용", 600)))
+                          lectureId,
+                          chapterId,
+                          UUID.randomUUID(),
+                          UserType.INSTRUCTOR,
+                          "제목",
+                          "내용",
+                          600)))
           .isInstanceOf(LectureNotFoundException.class);
     }
 
@@ -840,7 +876,7 @@ class LectureCommandServiceImplTest {
                           lecture.getId(),
                           notFoundChapterId,
                           instructorId,
-                          "INSTRUCTOR",
+                          UserType.INSTRUCTOR,
                           "제목",
                           "내용",
                           600)))
@@ -860,7 +896,13 @@ class LectureCommandServiceImplTest {
               () ->
                   lectureCommandService.updateChapter(
                       new ChapterUpdateCommand(
-                          lecture.getId(), chapterId, instructorId, "INSTRUCTOR", "제목", "내용", 600)))
+                          lecture.getId(),
+                          chapterId,
+                          instructorId,
+                          UserType.INSTRUCTOR,
+                          "제목",
+                          "내용",
+                          600)))
           .isInstanceOf(InvalidLectureStatusException.class);
     }
 
@@ -877,7 +919,13 @@ class LectureCommandServiceImplTest {
               () ->
                   lectureCommandService.updateChapter(
                       new ChapterUpdateCommand(
-                          lecture.getId(), chapterId, otherUser, "INSTRUCTOR", "제목", "내용", 600)))
+                          lecture.getId(),
+                          chapterId,
+                          otherUser,
+                          UserType.INSTRUCTOR,
+                          "제목",
+                          "내용",
+                          600)))
           .isInstanceOf(LectureAccessDeniedException.class);
     }
 
@@ -887,7 +935,13 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   new ChapterUpdateCommand(
-                      null, UUID.randomUUID(), UUID.randomUUID(), "INSTRUCTOR", "제목", "내용", 600))
+                      null,
+                      UUID.randomUUID(),
+                      UUID.randomUUID(),
+                      UserType.INSTRUCTOR,
+                      "제목",
+                      "내용",
+                      600))
           .isInstanceOf(InvalidLectureFieldException.class);
     }
 
@@ -897,7 +951,13 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   new ChapterUpdateCommand(
-                      UUID.randomUUID(), null, UUID.randomUUID(), "INSTRUCTOR", "제목", "내용", 600))
+                      UUID.randomUUID(),
+                      null,
+                      UUID.randomUUID(),
+                      UserType.INSTRUCTOR,
+                      "제목",
+                      "내용",
+                      600))
           .isInstanceOf(InvalidLectureFieldException.class);
     }
 
@@ -907,7 +967,13 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   new ChapterUpdateCommand(
-                      UUID.randomUUID(), UUID.randomUUID(), null, "INSTRUCTOR", "제목", "내용", 600))
+                      UUID.randomUUID(),
+                      UUID.randomUUID(),
+                      null,
+                      UserType.INSTRUCTOR,
+                      "제목",
+                      "내용",
+                      600))
           .isInstanceOf(InvalidLectureFieldException.class);
     }
 
@@ -920,7 +986,7 @@ class LectureCommandServiceImplTest {
                       UUID.randomUUID(),
                       UUID.randomUUID(),
                       UUID.randomUUID(),
-                      "  ",
+                      null,
                       "제목",
                       "내용",
                       600))
@@ -943,7 +1009,8 @@ class LectureCommandServiceImplTest {
 
       ChapterDeleteResult result =
           lectureCommandService.deleteChapter(
-              new ChapterDeleteCommand(lecture.getId(), chapterId, instructorId, "INSTRUCTOR"));
+              new ChapterDeleteCommand(
+                  lecture.getId(), chapterId, instructorId, UserType.INSTRUCTOR));
 
       assertThat(result.lectureId()).isEqualTo(lecture.getId());
       assertThat(result.chapterId()).isEqualTo(chapterId);
@@ -961,7 +1028,7 @@ class LectureCommandServiceImplTest {
 
       ChapterDeleteResult result =
           lectureCommandService.deleteChapter(
-              new ChapterDeleteCommand(lecture.getId(), chapterId, master, "MASTER"));
+              new ChapterDeleteCommand(lecture.getId(), chapterId, master, UserType.MASTER));
 
       assertThat(result.lectureId()).isEqualTo(lecture.getId());
       assertThat(result.chapterId()).isEqualTo(chapterId);
@@ -979,7 +1046,7 @@ class LectureCommandServiceImplTest {
               () ->
                   lectureCommandService.deleteChapter(
                       new ChapterDeleteCommand(
-                          lectureId, UUID.randomUUID(), UUID.randomUUID(), "INSTRUCTOR")))
+                          lectureId, UUID.randomUUID(), UUID.randomUUID(), UserType.INSTRUCTOR)))
           .isInstanceOf(LectureNotFoundException.class);
     }
 
@@ -995,7 +1062,7 @@ class LectureCommandServiceImplTest {
               () ->
                   lectureCommandService.deleteChapter(
                       new ChapterDeleteCommand(
-                          lecture.getId(), UUID.randomUUID(), instructorId, "INSTRUCTOR")))
+                          lecture.getId(), UUID.randomUUID(), instructorId, UserType.INSTRUCTOR)))
           .isInstanceOf(ChapterNotFoundException.class);
     }
 
@@ -1012,7 +1079,7 @@ class LectureCommandServiceImplTest {
               () ->
                   lectureCommandService.deleteChapter(
                       new ChapterDeleteCommand(
-                          lecture.getId(), chapterId, instructorId, "INSTRUCTOR")))
+                          lecture.getId(), chapterId, instructorId, UserType.INSTRUCTOR)))
           .isInstanceOf(InvalidLectureStatusException.class);
     }
 
@@ -1029,7 +1096,7 @@ class LectureCommandServiceImplTest {
               () ->
                   lectureCommandService.deleteChapter(
                       new ChapterDeleteCommand(
-                          lecture.getId(), chapterId, otherUser, "INSTRUCTOR")))
+                          lecture.getId(), chapterId, otherUser, UserType.INSTRUCTOR)))
           .isInstanceOf(LectureAccessDeniedException.class);
     }
   }
@@ -1055,7 +1122,7 @@ class LectureCommandServiceImplTest {
               new ChapterReorderCommand(
                   lecture.getId(),
                   instructorId,
-                  "INSTRUCTOR",
+                  UserType.INSTRUCTOR,
                   List.of(
                       new ChapterReorderCommand.ChapterOrderCommand(firstChapterId, 3),
                       new ChapterReorderCommand.ChapterOrderCommand(secondChapterId, 1),
@@ -1082,7 +1149,7 @@ class LectureCommandServiceImplTest {
           new ChapterReorderCommand(
               lecture.getId(),
               instructorId,
-              "INSTRUCTOR",
+              UserType.INSTRUCTOR,
               List.of(
                   new ChapterReorderCommand.ChapterOrderCommand(firstChapterId, 2),
                   new ChapterReorderCommand.ChapterOrderCommand(secondChapterId, 1))));
@@ -1114,7 +1181,7 @@ class LectureCommandServiceImplTest {
           new ChapterReorderCommand(
               lecture.getId(),
               instructorId,
-              "INSTRUCTOR",
+              UserType.INSTRUCTOR,
               List.of(new ChapterReorderCommand.ChapterOrderCommand(firstChapterId, 3))));
 
       assertThat(lecture.getChapterViews())
@@ -1144,7 +1211,7 @@ class LectureCommandServiceImplTest {
                       new ChapterReorderCommand(
                           lecture.getId(),
                           instructorId,
-                          "INSTRUCTOR",
+                          UserType.INSTRUCTOR,
                           List.of(
                               new ChapterReorderCommand.ChapterOrderCommand(
                                   UUID.randomUUID(), 3)))))
@@ -1167,7 +1234,7 @@ class LectureCommandServiceImplTest {
                       new ChapterReorderCommand(
                           lecture.getId(),
                           instructorId,
-                          "INSTRUCTOR",
+                          UserType.INSTRUCTOR,
                           List.of(
                               new ChapterReorderCommand.ChapterOrderCommand(firstChapterId, 2)))))
           .isInstanceOf(DuplicateSortOrderException.class);
@@ -1179,7 +1246,7 @@ class LectureCommandServiceImplTest {
       assertThatThrownBy(
               () ->
                   new ChapterReorderCommand(
-                      UUID.randomUUID(), UUID.randomUUID(), "INSTRUCTOR", List.of()))
+                      UUID.randomUUID(), UUID.randomUUID(), UserType.INSTRUCTOR, List.of()))
           .isInstanceOf(InvalidLectureFieldException.class);
     }
 
@@ -1193,7 +1260,7 @@ class LectureCommandServiceImplTest {
                   new ChapterReorderCommand(
                       UUID.randomUUID(),
                       UUID.randomUUID(),
-                      "INSTRUCTOR",
+                      UserType.INSTRUCTOR,
                       List.of(
                           new ChapterReorderCommand.ChapterOrderCommand(chapterId, 1),
                           new ChapterReorderCommand.ChapterOrderCommand(chapterId, 2))))
