@@ -1,0 +1,11 @@
+services:
+  lecture-service:
+    image: ${IMAGE}:${IMAGE_TAG:-latest}
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    ports:
+      - "9005:9005"
+    volumes:
+      - ./ssl/kafka.truststore.jks:/app/ssl/kafka.truststore.jks:ro
+    restart: unless-stopped

@@ -5,7 +5,9 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE}
     include:
       - topics
-      - kafka
+    group:
+      dev: "kafka"
+      prod: "kafka"
   config:
     import:
       - optional:file:.env[.properties]

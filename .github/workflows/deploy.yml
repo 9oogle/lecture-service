@@ -1,0 +1,302 @@
+name: Deploy
+
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+
+on:
+  push:
+    branches: ["dev", "main","chore/44-lecture-service-dev-deploy"]
+  workflow_dispatch:
+
+env:
+  IMAGE: ${{ vars.GAR_LOCATION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GAR_REPOSITORY }}/${{ vars.SERVICE_NAME }}
+
+jobs:
+  validate:
+    name: Validate Variables
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required variables
+        env:
+          SECRET_VM_HOST: ${{ secrets.VM_HOST }}
+          SECRET_VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+        run: |
+          echo "=== Variables ==="
+          echo "GAR_LOCATION     : ${{ vars.GAR_LOCATION }}"
+          echo "GCP_PROJECT_ID   : ${{ vars.GCP_PROJECT_ID }}"
+          echo "GAR_REPOSITORY   : ${{ vars.GAR_REPOSITORY }}"
+          echo "SERVICE_NAME     : ${{ vars.SERVICE_NAME }}"
+          echo "VM_USER          : ${{ vars.VM_USER }}"
+          echo "VM_SSH_PORT      : ${{ vars.VM_SSH_PORT }}"
+          echo "APP_DIR          : ${{ vars.APP_DIR }}"
+          echo "HEALTH_CHECK_PORT: ${{ vars.HEALTH_CHECK_PORT }}"
+          echo ""
+          echo "=== Secrets (존재 여부만 확인) ==="
+          [ -n "$SECRET_VM_HOST"    ] && echo "VM_HOST     : ✅" || echo "VM_HOST     : ❌ 누락"
+          [ -n "$SECRET_VM_SSH_KEY" ] && echo "VM_SSH_KEY  : ✅" || echo "VM_SSH_KEY  : ❌ 누락"
+          echo ""
+
+          MISSING=()
+          [ -z "${{ vars.GAR_LOCATION }}"      ] && MISSING+=("vars.GAR_LOCATION")
+          [ -z "${{ vars.GCP_PROJECT_ID }}"    ] && MISSING+=("vars.GCP_PROJECT_ID")
+          [ -z "${{ vars.GAR_REPOSITORY }}"    ] && MISSING+=("vars.GAR_REPOSITORY")
+          [ -z "${{ vars.SERVICE_NAME }}"      ] && MISSING+=("vars.SERVICE_NAME")
+          [ -z "${{ vars.VM_USER }}"           ] && MISSING+=("vars.VM_USER")
+          [ -z "${{ vars.VM_SSH_PORT }}"       ] && MISSING+=("vars.VM_SSH_PORT")
+          [ -z "${{ vars.APP_DIR }}"           ] && MISSING+=("vars.APP_DIR")
+          [ -z "${{ vars.HEALTH_CHECK_PORT }}" ] && MISSING+=("vars.HEALTH_CHECK_PORT")
+          [ -z "$SECRET_VM_HOST"               ] && MISSING+=("secrets.VM_HOST")
+          [ -z "$SECRET_VM_SSH_KEY"            ] && MISSING+=("secrets.VM_SSH_KEY")
+
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "=== 누락된 변수 ==="
+            for var in "${MISSING[@]}"; do
+              echo "  ❌ $var"
+            done
+            exit 1
+          fi
+
+          echo "=== 모든 변수 확인 완료 ✅ ==="
+
+  test:
+    name: Test
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Run tests
+        run: |
+          chmod +x ./gradlew
+          ./gradlew test \
+            -PGitHubPackagesUsername=${{ github.actor }} \
+            -PGitHubPackagesPassword=${{ secrets.GITHUB_TOKEN }}
+
+  build-and-push:
+    name: Build & Push
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Build JAR
+        run: |
+          chmod +x ./gradlew
+          ./gradlew bootJar -x test \
+            -PGitHubPackagesUsername=${{ github.actor }} \
+            -PGitHubPackagesPassword=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/985172684764/locations/global/workloadIdentityPools/github-pool/providers/github-provider-v2
+          service_account: deployManager@melodic-crane-494802-u3.iam.gserviceaccount.com
+
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.GAR_LOCATION }}-docker.pkg.dev --quiet
+
+      - name: Build and push image
+        run: |
+          LATEST_TAG=$([[ "${{ github.ref_name }}" == "main" ]] && echo "latest-main" || echo "latest-dev")
+          docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:${LATEST_TAG} .
+          docker push $IMAGE:${{ github.sha }}
+          docker push $IMAGE:${LATEST_TAG}
+
+  deploy:
+    name: Deploy
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set compose file
+        id: vars
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ] && [ -f "docker-compose.prod.yml" ]; then
+            echo "compose=docker-compose.prod.yml" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_name }}" != "main" ] && [ -f "docker-compose.dev.yml" ]; then
+            echo "compose=docker-compose.dev.yml" >> $GITHUB_OUTPUT
+          else
+            echo "compose=docker-compose.yml" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Copy compose file
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ vars.VM_USER }}
+          port: ${{ vars.VM_SSH_PORT }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          source: "${{ steps.vars.outputs.compose }}"
+          target: "${{ vars.APP_DIR }}"
+
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ vars.VM_USER }}
+          port: ${{ vars.VM_SSH_PORT }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            set -e
+
+            APP_DIR="${{ vars.APP_DIR }}"
+            SERVICE="${{ vars.SERVICE_NAME }}"
+            NEW_TAG="${{ github.sha }}"
+            export IMAGE="${{ vars.GAR_LOCATION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GAR_REPOSITORY }}/${{ vars.SERVICE_NAME }}"
+            ENV_FILE="$APP_DIR/.env"
+
+            cd $APP_DIR
+
+            # 롤백용 이전 태그 저장
+            PREV_TAG=$(grep '^IMAGE_TAG=' "$ENV_FILE" 2>/dev/null | cut -d= -f2)
+            if [ -z "$PREV_TAG" ]; then
+              echo "이전 태그 없음 — 초기 배포로 간주, 실패 시 롤백 불가"
+            fi
+            echo "Previous: ${PREV_TAG:-(없음)} → New: $NEW_TAG"
+
+            # .env 업데이트
+            upsert_env() {
+              local KEY="$1" VAL="$2"
+              if grep -q "^${KEY}=" "$ENV_FILE" 2>/dev/null; then
+                sed -i "s|^${KEY}=.*|${KEY}=${VAL}|" "$ENV_FILE"
+              else
+                echo "${KEY}=${VAL}" >> "$ENV_FILE"
+              fi
+            }
+
+            # =====================================================
+            # ↓↓↓ lecture-service 환경변수 ↓↓↓
+            # =====================================================
+            upsert_env IMAGE_TAG "$NEW_TAG"
+            upsert_env EUREKA_CLIENT_SERVICEURL_DEFAULTZONE "http://${{ secrets.VM_HOST }}:9001/eureka/"
+
+            # DB
+            upsert_env SPRING_DATASOURCE_URL "${{ secrets.DB_URL }}/${{ vars.DB_SCHEMA }}"
+            upsert_env DB_USERNAME "${{ secrets.DB_USERNAME }}"
+            upsert_env DB_PASSWORD "${{ secrets.DB_PASSWORD }}"
+
+            # Kafka
+            upsert_env KAFKA_BOOTSTRAP_SERVERS "${{ secrets.KAFKA_1_INTERNAL_IP }}:9092,${{ secrets.KAFKA_2_INTERNAL_IP }}:9092,${{ secrets.KAFKA_3_INTERNAL_IP }}:9092"
+            upsert_env TRUST_STORE_PASSWORD "${{ secrets.TRUST_STORE_PASSWORD }}"
+
+            # Redis
+            upsert_env REDIS_SENTINEL_1 "${{ secrets.REDIS_1_INTERNAL_IP }}:26379"
+            upsert_env REDIS_SENTINEL_2 "${{ secrets.REDIS_2_INTERNAL_IP }}:26379"
+            upsert_env REDIS_SENTINEL_3 "${{ secrets.REDIS_3_INTERNAL_IP }}:26379"
+            upsert_env REDIS_PASSWORD "${{ secrets.REDIS_PASSWORD }}"
+
+            # Monitoring
+            upsert_env MONITORING_HOST "${{ secrets.MONITORING_VM_HOST }}"
+            # =====================================================
+
+            # Kafka SSL truststore 복원
+            mkdir -p $APP_DIR/ssl
+            TRUSTSTORE_B64="${{ secrets.TRUSTSTORE_JKS_B64 }}"
+            if [ -z "$TRUSTSTORE_B64" ]; then
+              echo "[SSL] ❌ TRUSTSTORE_JKS_B64 secret이 비어있음"
+              exit 1
+            fi
+            echo "$TRUSTSTORE_B64" | base64 -d > $APP_DIR/ssl/kafka.truststore.jks
+            FILE_SIZE=$(stat -c%s "$APP_DIR/ssl/kafka.truststore.jks")
+            echo "[SSL] ✅ 파일 생성 완료 (크기: ${FILE_SIZE} bytes)"
+            if [ "$FILE_SIZE" -eq 0 ]; then
+              echo "[SSL] ❌ 파일이 비어있음 — base64 디코딩 실패"
+              exit 1
+            fi
+            # [DEBUG-REMOVE] 디버깅 완료 후 제거 ↓↓↓
+            echo "[SSL] 호스트 경로: $(ls -lh $APP_DIR/ssl/kafka.truststore.jks)"
+            echo "[SSL] 파일 타입: $(file $APP_DIR/ssl/kafka.truststore.jks)"
+            # [DEBUG-REMOVE] 디버깅 완료 후 제거 ↑↑↑
+
+            # 새 이미지 pull & 재시작
+            COMPOSE_FILE="${{ steps.vars.outputs.compose }}"
+            docker compose -f $COMPOSE_FILE pull $SERVICE
+            docker compose -f $COMPOSE_FILE up -d $SERVICE
+
+            # [DEBUG-REMOVE] 디버깅 완료 후 제거 ↓↓↓
+            # =====================================================
+            # 컨테이너 기동 후 디버그 정보 dump
+            # =====================================================
+            sleep 10
+            CONTAINER_NAME=$(docker compose -f $COMPOSE_FILE ps -q $SERVICE)
+            echo "[DEBUG] 컨테이너 ID: $CONTAINER_NAME"
+            echo "[DEBUG] 컨테이너 내부 /app/ssl/ 확인:"
+            docker exec "$CONTAINER_NAME" ls -lh /app/ssl/ 2>&1 || echo "[DEBUG] /app/ssl/ 확인 실패"
+            echo "[DEBUG] 컨테이너 내부 truststore 위치 검색:"
+            docker exec "$CONTAINER_NAME" find / -name 'kafka.truststore.jks' 2>/dev/null || echo "[DEBUG] find 실패"
+            echo "[DEBUG] 앱 시작 로그 (최근 100줄):"
+            docker logs "$CONTAINER_NAME" --tail 100 2>&1 || echo "[DEBUG] logs 실패"
+            # [DEBUG-REMOVE] 디버깅 완료 후 제거 ↑↑↑
+
+            # Health check (30초 간격, 최대 8회)
+            echo "Health check 시작... (port: ${{ vars.HEALTH_CHECK_PORT }})"
+            for i in $(seq 1 8); do
+              sleep 30
+              if curl -sf "http://localhost:${{ vars.HEALTH_CHECK_PORT }}/actuator/health" > /dev/null; then
+                echo "Health check 통과 (시도 $i)"
+                exit 0
+              fi
+              echo "Health check 실패 ($i/8)"
+            done
+
+            # [DEBUG-REMOVE] 디버깅 완료 후 제거 ↓↓↓
+            # =====================================================
+            # 헬스체크 실패 후 앱 로그 dump (디버깅용)
+            # =====================================================
+            echo "=================================================="
+            echo "[FATAL] 헬스체크 8회 모두 실패 — 앱 로그 dump"
+            echo "=================================================="
+            CONTAINER_NAME=$(docker compose -f $COMPOSE_FILE ps -q $SERVICE)
+            docker logs "$CONTAINER_NAME" --tail 300 2>&1 || echo "[FATAL] logs 실패"
+            echo "=================================================="
+            # [DEBUG-REMOVE] 디버깅 완료 후 제거 ↑↑↑
+
+            # 롤백
+            if [ -z "$PREV_TAG" ]; then
+              echo "이전 태그 없음 — 롤백 불가, 수동 복구 필요"
+              exit 1
+            fi
+            echo "배포 실패 — $PREV_TAG 로 롤백..."
+            sed -i "s|^IMAGE_TAG=.*|IMAGE_TAG=$PREV_TAG|" "$ENV_FILE"
+            docker compose -f $COMPOSE_FILE up -d $SERVICE
+            sleep 30
+            if curl -sf "http://localhost:${{ vars.HEALTH_CHECK_PORT }}/actuator/health" > /dev/null; then
+              echo "롤백 성공"
+            else
+              echo "롤백도 실패"
+            fi
+            exit 1
