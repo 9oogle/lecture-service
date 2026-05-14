@@ -38,7 +38,7 @@ ext {
 
 dependencies {
     // ── 공통 라이브러리 ──────────────────────────────────────────
-    implementation 'com.goggles:common-library:1.0.3'
+    implementation 'com.goggles:common-library:1.0.6'
 
     // ── Spring Boot Core ─────────────────────────────────────────
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -102,7 +102,7 @@ dependencyManagement {
 }
 
 openApi {
-    apiDocsUrl.set("http://localhost:9005/v3/api-docs.yaml")
+    apiDocsUrl.set("http://localhost:9012/v3/api-docs.yaml")
     outputDir.set(file("docs"))
     outputFileName.set("openapi.yaml")
     waitTimeInSeconds.set(60)
