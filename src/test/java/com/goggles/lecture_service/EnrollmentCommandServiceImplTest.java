@@ -330,7 +330,7 @@ class EnrollmentCommandServiceImplTest {
       UUID completedOrderId = UUID.randomUUID();
 
       // 이미 ACTIVE 상태로 변경
-      enrollment.complete(now, completedOrderId);
+      enrollment.activate(now, completedOrderId);
 
       UUID duplicatedOrderId = UUID.randomUUID();
 
@@ -446,7 +446,7 @@ class EnrollmentCommandServiceImplTest {
     @DisplayName("실패: ACTIVE 상태(결제 성공) enrollment 롤백 시도 차단")
     void rollback_activeStatus_throws() {
       Enrollment enrollment = reservedEnrollment(userId);
-      enrollment.complete(LocalDateTime.now(), UUID.randomUUID()); // RESERVE → ACTIVE
+      enrollment.activate(LocalDateTime.now(), UUID.randomUUID()); // RESERVE → ACTIVE
       when(enrollmentRepository.findAllByIdIn(List.of(enrollment.getId())))
           .thenReturn(List.of(enrollment));
 

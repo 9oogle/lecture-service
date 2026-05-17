@@ -107,18 +107,6 @@ public class Enrollment extends BaseAudit {
     this.status = EnrollmentStatus.ACTIVE;
   }
 
-  public void complete(LocalDateTime now, UUID orderId) {
-    validateNow(now);
-    validateOrderId(orderId);
-    if (this.status != EnrollmentStatus.RESERVE) {
-      throw new InvalidEnrollmentStatusException(ENROLLMENT_INVALID_STATUS_FOR_ACTIVATE);
-    }
-    this.orderId = orderId;
-    this.status = EnrollmentStatus.ACTIVE;
-    this.activatedAt = now;
-    this.expiresAt = calculateExpiresAt(now, this.durationPolicy);
-  }
-
   public void cancel() {
     if (this.status != EnrollmentStatus.RESERVE && this.status != EnrollmentStatus.ACTIVE) {
       throw new InvalidEnrollmentStatusException(
@@ -153,28 +141,6 @@ public class Enrollment extends BaseAudit {
   public boolean isExpired(LocalDateTime now) {
     validateNow(now);
     return this.expiresAt != null && now.isAfter(this.expiresAt);
-  }
-
-  // 스냅샷 내부 직접 접근
-  public UUID getLectureId() {
-    return this.lectureSnapshot.getLectureId();
-  }
-
-  public UUID getInstructorId() {
-    return this.lectureSnapshot.getInstructorId();
-  }
-
-  // 내부 검증
-  private static void validateRequired(
-      LectureSnapshot lectureSnapshot, UUID studentId, DurationPolicy durationPolicy) {
-    if (lectureSnapshot == null)
-      throw new InvalidEnrollmentFieldException(
-          EnrollmentErrorCode.ENROLLMENT_LECTURE_SNAPSHOT_REQUIRED);
-    if (studentId == null)
-      throw new InvalidEnrollmentFieldException(EnrollmentErrorCode.ENROLLMENT_STUDENT_ID_REQUIRED);
-    if (durationPolicy == null)
-      throw new InvalidEnrollmentFieldException(
-          EnrollmentErrorCode.ENROLLMENT_DURATION_POLICY_REQUIRED);
   }
 
   // 결제 실패 보상 트랙잭션

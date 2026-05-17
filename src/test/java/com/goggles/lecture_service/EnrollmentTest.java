@@ -64,8 +64,8 @@ class EnrollmentTest {
 
       assertThat(enrollment).isNotNull();
       assertThat(enrollment.getStatus()).isEqualTo(EnrollmentStatus.RESERVE);
-      assertThat(enrollment.getLectureId()).isEqualTo(lectureId);
-      assertThat(enrollment.getInstructorId()).isEqualTo(instructorId);
+      assertThat(enrollment.getLectureSnapshot().getLectureId()).isEqualTo(lectureId);
+      assertThat(enrollment.getLectureSnapshot().getInstructorId()).isEqualTo(instructorId);
       assertThat(enrollment.getLectureSnapshot().getLectureTitle()).isEqualTo("스프링 부트 입문");
       assertThat(enrollment.getStudentId()).isEqualTo(studentId);
       assertThat(enrollment.getOrderId()).isNull();
