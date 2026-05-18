@@ -209,7 +209,7 @@ jobs:
             }
 
             upsert_env IMAGE_TAG "$NEW_TAG"
-            upsert_env SPRING_DATASOURCE_URL "jdbc:postgresql://${{ secrets.DB_URL }}/lecture_db?currentSchema=lecture_db"
+            upsert_env SPRING_DATASOURCE_URL "jdbc:postgresql://${{ secrets.DB_URL }}/lecture_db"
             upsert_env DB_USERNAME "${{ secrets.DB_USERNAME }}"
             upsert_env DB_PASSWORD "${{ secrets.DB_PASSWORD }}"
             upsert_env EUREKA_CLIENT_SERVICEURL_DEFAULTZONE "http://${{ secrets.VM_INTERNAL_HOST }}:9001/eureka/"
