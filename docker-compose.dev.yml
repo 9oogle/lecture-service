@@ -1,0 +1,19 @@
+services:
+  lecture-service:
+    image: ${IMAGE}:${IMAGE_TAG:-latest}
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "9005:9005"
+    volumes:
+      - /home/deploy/ssl/kafka.truststore.jks:/app/ssl/kafka.truststore.jks:ro
+      - lecture-logs:/app/logs
+    restart: on-failure:3
+
+volumes:
+  lecture-logs:
+
+networks:
+  goggles-network:
+    external: true
